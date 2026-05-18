@@ -29,7 +29,7 @@ interface UnitStats {
 
 interface BackupRecord {
   id: string;
-  createdAt: Timestamp;
+  createdAt: any;
   type: string;
   status: string;
   fileName: string;
@@ -43,7 +43,7 @@ export default function Dashboard() {
     const checkBackup = async () => {
       const backups = await getBackups() as unknown as BackupRecord[];
       if (backups.length > 0) {
-        const lastBackup = backups[0].createdAt.toDate();
+        const lastBackup = new Date(backups[0].createdAt);
         const diff = new Date().getTime() - lastBackup.getTime();
         const days = diff / (1000 * 60 * 60 * 24);
         if (days > 10) setBackupAlert(true);

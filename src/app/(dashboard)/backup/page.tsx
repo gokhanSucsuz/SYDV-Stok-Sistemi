@@ -7,18 +7,19 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
 export default function Backup() {
+  const f = format as any;
   const [backups, setBackups] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null);
-
-  useEffect(() => {
-    fetchBackups();
-  }, []);
 
   const fetchBackups = async () => {
     const data = await getBackups();
     setBackups(data);
   };
+
+  useEffect(() => {
+    fetchBackups();
+  }, []);
 
   const handleManualBackup = async () => {
     setLoading(true);
@@ -29,7 +30,7 @@ export default function Backup() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `edirne-sydv-yedek-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.json`;
+      a.download = `edirne-sydv-yedek-${f(new Date(), 'yyyy-MM-dd-HH-mm')}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -54,7 +55,7 @@ export default function Backup() {
 
   const lastBackup = backups[0];
   const daysSinceLastBackup = lastBackup 
-    ? Math.floor((new Date().getTime() - lastBackup.createdAt.toDate().getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.floor((new Date().getTime() - new Date(lastBackup.createdAt).getTime()) / (1000 * 60 * 60 * 24))
     : 999;
 
   return (
@@ -99,7 +100,7 @@ export default function Backup() {
             <div className="text-sm">
               <span className="font-medium text-gray-700">Son Yedekleme:</span>{' '}
               <span className="text-gray-600">
-                {lastBackup ? format(lastBackup.createdAt.toDate(), 'd MMMM yyyy HH:mm', { locale: tr }) : 'Hiç yedek alınmadı'}
+                {lastBackup ? f(new Date(lastBackup.createdAt), 'd MMMM yyyy HH:mm', { locale: tr }) : 'Hiç yedek alınmadı'}
               </span>
             </div>
           </div>
@@ -192,7 +193,7 @@ export default function Backup() {
                     {backups.map((backup) => (
                       <tr key={backup.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {format(backup.createdAt.toDate(), 'd MMMM yyyy HH:mm', { locale: tr })}
+                          {f(new Date(backup.createdAt), 'd MMMM yyyy HH:mm', { locale: tr })}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{backup.type}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{backup.fileName}</td>
