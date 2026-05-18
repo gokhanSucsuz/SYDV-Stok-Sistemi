@@ -46,6 +46,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         if (firebaseUser.email === AUTHORIZED_EMAIL) {
@@ -67,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loginWithGoogle = async () => {
+    if (!auth) throw new Error('Firebase authentication is not initialized. Please check your API keys.');
     setLoginError(null);
     const provider = new GoogleAuthProvider();
     try {
@@ -94,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithEmail = async (email: string, pass: string) => {
+    if (!auth) throw new Error('Firebase authentication is not initialized.');
     if (!user || user.email !== AUTHORIZED_EMAIL) {
       throw new Error('Öncelikle Google ile giriş yapmalısınız.');
     }
@@ -125,7 +131,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await signOut(auth);
+    if (auth) {
+      await signOut(auth);
+    }
     setPersonnel(null);
     router.push('/login');
   };
