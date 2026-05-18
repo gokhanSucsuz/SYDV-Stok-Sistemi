@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { getPersonnel, getAllItems, getAllTransactions, getMasterItems, getBackups, Personnel, Item, Transaction, UnitType } from '@/lib/db';
+import { Timestamp } from 'firebase/firestore';
 import Link from 'next/link';
 
 import { Package, ArrowDownRight, ArrowUpRight, ArrowRight, Users, PackageOpen, AlertTriangle, AlertCircle, Droplets, Utensils, Home, Gift, Building2, FileText, Calendar } from 'lucide-react';
@@ -28,7 +29,7 @@ interface UnitStats {
 
 interface BackupRecord {
   id: string;
-  createdAt: number;
+  createdAt: Timestamp;
   type: string;
   status: string;
   fileName: string;
@@ -42,7 +43,7 @@ export default function Dashboard() {
     const checkBackup = async () => {
       const backups = await getBackups() as unknown as BackupRecord[];
       if (backups.length > 0) {
-        const lastBackup = new Date(backups[0].createdAt);
+        const lastBackup = backups[0].createdAt.toDate();
         const diff = new Date().getTime() - lastBackup.getTime();
         const days = diff / (1000 * 60 * 60 * 24);
         if (days > 10) setBackupAlert(true);
@@ -167,8 +168,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <Link
-                to="/backup"
+              <Link href="/backup"
                 className="flex items-center text-sm font-medium text-red-700 hover:text-red-600"
               >
                 Yedekleme Paneli
@@ -183,7 +183,7 @@ export default function Dashboard() {
               <Users className="h-5 w-5 text-yellow-400" />
               <div className="ml-3">
                 <p className="text-sm text-yellow-700">
-                  Sistemde kayıtlı personel bulunmuyor. <Link to="/personnel" className="font-medium underline">Personel ekleyin</Link>.
+                  Sistemde kayıtlı personel bulunmuyor. <Link href="/personnel" className="font-medium underline">Personel ekleyin</Link>.
                 </p>
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function Dashboard() {
               <AlertTriangle className="h-5 w-5 text-orange-400" />
               <div className="ml-3">
                 <p className="text-sm text-orange-700">
-                  Sistemde tanımlı malzeme bulunmuyor. <Link to="/master-items" className="font-medium underline">Malzeme tanımlayın</Link>.
+                  Sistemde tanımlı malzeme bulunmuyor. <Link href="/master-items" className="font-medium underline">Malzeme tanımlayın</Link>.
                 </p>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function Dashboard() {
             <p className="text-2xl font-semibold text-gray-900">{personnelCount}</p>
           </div>
         </div>
-        <Link to="/tenders" className="bg-white p-5 shadow rounded-lg flex items-center hover:bg-gray-50 transition-colors">
+        <Link href="/tenders" className="bg-white p-5 shadow rounded-lg flex items-center hover:bg-gray-50 transition-colors">
           <div className="p-3 bg-purple-100 rounded-full">
             <PackageOpen className="h-6 w-6 text-purple-600" />
           </div>
@@ -323,7 +323,7 @@ export default function Dashboard() {
                            stats.name === 'Bağış' ? 'bagis' : 'vakif';
           
           return (
-            <Link key={stats.name} to={`/unit/${unitPath}`} className="bg-white p-6 shadow rounded-lg hover:shadow-md transition-shadow border-t-4" style={{ borderTopColor: COLORS[index % COLORS.length] }}>
+            <Link key={stats.name} href={`/unit/${unitPath}`} className="bg-white p-6 shadow rounded-lg hover:shadow-md transition-shadow border-t-4" style={{ borderTopColor: COLORS[index % COLORS.length] }}>
               <div className="flex justify-between items-start mb-4">
                 <div className="p-2 bg-gray-50 rounded-lg">
                   <Icon className="h-6 w-6 text-gray-600" />
@@ -372,7 +372,7 @@ export default function Dashboard() {
       <div className="bg-white shadow sm:rounded-lg overflow-hidden">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg leading-6 font-medium text-gray-900">Son İşlemler</h3>
-          <Link to="/statistics" className="text-sm text-red-600 hover:text-red-800 font-medium">Tüm Raporlar →</Link>
+          <Link href="/statistics" className="text-sm text-red-600 hover:text-red-800 font-medium">Tüm Raporlar →</Link>
         </div>
         <ul className="divide-y divide-gray-200">
           {recentTransactions.length === 0 ? (

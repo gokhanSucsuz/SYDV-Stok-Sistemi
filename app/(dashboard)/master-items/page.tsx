@@ -13,14 +13,14 @@ export default function MasterItems() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  useEffect(() => {
+    loadItems();
+  }, []);
+
   const loadItems = async () => {
     const loadedItems = await getMasterItems();
     setItems(loadedItems.sort((a, b) => a.name.localeCompare(b.name)));
   };
-
-  useEffect(() => {
-    loadItems();
-  }, []);
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();

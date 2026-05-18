@@ -1,6 +1,8 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Edirne SYDV Stok",
+  "description": "Edirne Sosyal Yardımlaşma ve Dayanışma Vakfı Stok Yönetim Sistemi",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

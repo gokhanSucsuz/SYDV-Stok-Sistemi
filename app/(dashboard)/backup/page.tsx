@@ -11,14 +11,14 @@ export default function Backup() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null);
 
+  useEffect(() => {
+    fetchBackups();
+  }, []);
+
   const fetchBackups = async () => {
     const data = await getBackups();
     setBackups(data);
   };
-
-  useEffect(() => {
-    fetchBackups();
-  }, []);
 
   const handleManualBackup = async () => {
     setLoading(true);
