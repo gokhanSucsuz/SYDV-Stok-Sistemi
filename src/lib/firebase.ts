@@ -12,5 +12,7 @@ const firebaseConfig = {
 };
 
 // Prevent duplicate initialization in Next.js dev mode
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-export const auth = typeof window !== 'undefined' ? getAuth(app) : null as unknown as Auth;
+const app =
+  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+export const auth =
+  typeof window !== "undefined" ? getAuth(app) : (null as unknown as Auth);

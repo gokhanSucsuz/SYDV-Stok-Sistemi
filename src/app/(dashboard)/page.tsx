@@ -1,23 +1,69 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { getPersonnel, getAllItems, getAllTransactions, getMasterItems, getBackups, Personnel, Item, Transaction, UnitType } from '@/lib/db';
-import { Timestamp } from 'firebase/firestore';
-import Link from 'next/link';
+import React, { useEffect, useState } from "react";
+import {
+  getPersonnel,
+  getAllItems,
+  getAllTransactions,
+  getMasterItems,
+  getBackups,
+  Personnel,
+  Item,
+  Transaction,
+  UnitType,
+} from "@/lib/db";
+import Link from "next/link";
+import {
+  Package,
+  ArrowDownRight,
+  ArrowUpRight,
+  ArrowRight,
+  Users,
+  PackageOpen,
+  AlertTriangle,
+  AlertCircle,
+  Droplets,
+  Utensils,
+  Home,
+  Gift,
+  Building2,
+  FileText,
+  Calendar,
+  PlusCircle,
+  History,
+  Database,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie,
+} from "recharts";
+import { generateMonthlyInventoryReport } from "@/lib/reports";
+import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 
-import { Package, ArrowDownRight, ArrowUpRight, ArrowRight, Users, PackageOpen, AlertTriangle, AlertCircle, Droplets, Utensils, Home, Gift, Building2, FileText, Calendar } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { generateMonthlyInventoryReport } from '@/lib/reports';
-
-const UNITS: UnitType[] = ['Vefa Temizlik', 'Aşevi', 'Dergah', 'Bağış', 'Vakıf'];
+const UNITS: UnitType[] = [
+  "Vefa Temizlik",
+  "Aşevi",
+  "Dergah",
+  "Bağış",
+  "Vakıf",
+];
 const UNIT_ICONS = {
-  'Vefa Temizlik': Droplets,
-  'Aşevi': Utensils,
-  'Dergah': Home,
-  'Bağış': Gift,
-  'Vakıf': Building2
+  "Vefa Temizlik": Droplets,
+  Aşevi: Utensils,
+  Dergah: Home,
+  Bağış: Gift,
+  Vakıf: Building2,
 };
-const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+const COLORS = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"];
 
 interface UnitStats {
   name: UnitType;
@@ -27,36 +73,14 @@ interface UnitStats {
   transactionCount: number;
 }
 
-interface BackupRecord {
-  id: string;
-  createdAt: any;
-  type: string;
-  status: string;
-  fileName: string;
-  size: string;
-}
-
 export default function Dashboard() {
   const [backupAlert, setBackupAlert] = useState(false);
-
-  useEffect(() => {
-    const checkBackup = async () => {
-      const backups = await getBackups() as unknown as BackupRecord[];
-      if (backups.length > 0) {
-        const lastBackup = new Date(backups[0].createdAt);
-        const diff = new Date().getTime() - lastBackup.getTime();
-        const days = diff / (1000 * 60 * 60 * 24);
-        if (days > 10) setBackupAlert(true);
-      } else {
-        setBackupAlert(true);
-      }
-    };
-    checkBackup();
-  }, []);
   const [personnelCount, setPersonnelCount] = useState(0);
   const [masterItemsCount, setMasterItemsCount] = useState(0);
   const [tendersCount, setTendersCount] = useState(0);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
+    [],
+  );
   const [personnelMap, setPersonnelMap] = useState<Record<string, string>>({});
   const [unitStats, setUnitStats] = useState<UnitStats[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
@@ -69,12 +93,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadData = async () => {
+      const backups = (await getBackups()) as any[];
+      if (backups.length > 0) {
+        const lastBackup = new Date(backups[0].createdAt);
+        const days =
+          (new Date().getTime() - lastBackup.getTime()) / (1000 * 60 * 60 * 24);
+        if (days > 10) setBackupAlert(true);
+      } else {
+        setBackupAlert(true);
+      }
+
       const p = await getPersonnel();
       setAllPersonnel(p);
       setPersonnelCount(p.length);
-      
       const pMap: Record<string, string> = {};
-      p.forEach(person => {
+      p.forEach((person) => {
         if (person.id) pMap[person.id] = person.name;
       });
       setPersonnelMap(pMap);
@@ -84,199 +117,239 @@ export default function Dashboard() {
       const mItems = await getMasterItems();
       setMasterItemsCount(mItems.length);
 
-      // Count unique tenders
-      const uniqueTenders = new Set(items.filter(i => i.tenderName).map(i => `${i.tenderName}-${i.unit}`));
+      const uniqueTenders = new Set(
+        items
+          .filter((i) => i.tenderName)
+          .map((i) => `${i.tenderName}-${i.unit}`),
+      );
       setTendersCount(uniqueTenders.size);
 
       const txs = await getAllTransactions();
       setAllTransactions(txs);
-      setRecentTransactions(txs.sort((a, b) => b.date - a.date).slice(0, 5));
+      setRecentTransactions(txs.sort((a, b) => b.date - a.date).slice(0, 6));
 
-      // Calculate per-unit stats
-      const stats: UnitStats[] = UNITS.map(unit => {
-        const unitItems = items.filter(i => i.unit === unit);
-        const unitTxs = txs.filter(t => t.unit === unit);
-        
-        // Group items by name within the unit to check total stock
-        const groupedByProduct = unitItems.reduce((acc, item) => {
-          if (!acc[item.name]) {
-            acc[item.name] = { totalStock: 0, totalLimit: 0, latestCreatedAt: 0 };
-          }
-          acc[item.name].totalStock += item.currentStock;
-          // Use the limit of the most recently created tender as the reference for low stock calculation
-          if (item.createdAt > (acc[item.name].latestCreatedAt || 0)) {
-            acc[item.name].totalLimit = (item.tenderLimit || 0);
-            acc[item.name].latestCreatedAt = item.createdAt;
-          }
-          return acc;
-        }, {} as Record<string, { totalStock: number, totalLimit: number, latestCreatedAt: number }>);
+      const stats: UnitStats[] = UNITS.map((unit) => {
+        const unitItems = items.filter((i) => i.unit === unit);
+        const unitTxs = txs.filter((t) => t.unit === unit);
+        const groupedByProduct = unitItems.reduce(
+          (acc, item) => {
+            if (!acc[item.name])
+              acc[item.name] = {
+                totalStock: 0,
+                totalLimit: 0,
+                latestCreatedAt: 0,
+              };
+            acc[item.name].totalStock += item.currentStock;
+            if (item.createdAt > (acc[item.name].latestCreatedAt || 0)) {
+              acc[item.name].totalLimit = item.tenderLimit || 0;
+              acc[item.name].latestCreatedAt = item.createdAt;
+            }
+            return acc;
+          },
+          {} as Record<
+            string,
+            { totalStock: number; totalLimit: number; latestCreatedAt: number }
+          >,
+        );
 
         const productValues = Object.values(groupedByProduct);
-        const zeroStock = productValues.filter(p => p.totalStock <= 0);
-        const lowStock = productValues.filter(p => {
-          if (p.totalStock <= 0) return false;
-          const threshold = p.totalLimit ? Math.max(p.totalLimit * 0.1, 2) : 2;
-          return p.totalStock < threshold;
-        });
-
         return {
           name: unit,
           itemCount: Object.keys(groupedByProduct).length,
-          zeroStockCount: zeroStock.length,
-          lowStockCount: lowStock.length,
-          transactionCount: unitTxs.length
+          zeroStockCount: productValues.filter((p) => p.totalStock <= 0).length,
+          lowStockCount: productValues.filter(
+            (p) =>
+              p.totalStock > 0 &&
+              p.totalStock <
+                (p.totalLimit ? Math.max(p.totalLimit * 0.1, 2) : 2),
+          ).length,
+          transactionCount: unitTxs.length,
         };
       });
 
       setUnitStats(stats);
-      setChartData(stats.map(s => ({ name: s.name, value: s.itemCount })));
+      setChartData(stats.map((s) => ({ name: s.name, value: s.itemCount })));
     };
     loadData();
   }, []);
 
+  const totalStock = unitStats.reduce((acc, s) => acc + s.itemCount, 0);
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Gösterge Paneli</h1>
-        <div className="flex items-center space-x-4">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-semibold text-gray-900 tracking-tight">
+            Genel Bakış
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Sistemin genel durumunu ve kritik uyarıları buradan takip
+            edebilirsiniz.
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowReportModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-xl text-white bg-gray-900 hover:bg-gray-800 shadow-sm transition-all focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
           >
             <FileText className="w-4 h-4 mr-2" />
-            Aylık Envanter Raporu Al
+            Rapor Oluştur
           </button>
-          <div className="text-sm text-gray-500">Son Güncelleme: {new Date().toLocaleTimeString('tr-TR')}</div>
         </div>
       </div>
 
       {/* Global Alerts */}
       <div className="space-y-3">
         {backupAlert && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md shadow-sm animate-pulse">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <AlertTriangle className="h-5 w-5 text-red-400" aria-hidden="true" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700 font-bold">
-                    DİKKAT: Veri yedekleme periyodu (10 gün) aşılmıştır!
-                  </p>
-                  <p className="text-xs text-red-600">
-                    Veri güvenliği için lütfen acilen manuel yedek alınız veya otomatik yedeklemeyi kontrol ediniz.
-                  </p>
-                </div>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-red-500/20 p-2 rounded-xl text-red-600">
+                <AlertTriangle className="w-5 h-5" />
               </div>
-              <Link
-                href="/backup"
-                className="flex items-center text-sm font-medium text-red-700 hover:text-red-600"
+              <div>
+                <p className="text-sm font-semibold text-red-700">
+                  Yedekleme Uyarısı
+                </p>
+                <p className="text-xs text-red-600/80">
+                  Sistem yedeği 10 günden eski. Lütfen yeni bir yedek alın.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/backup"
+              className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition"
+            >
+              Yedekle
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* Bento Grid - Top Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            label: "Kayıtlı Personel",
+            value: personnelCount,
+            icon: Users,
+            color: "text-blue-600",
+            bg: "bg-blue-50",
+            link: "/personnel",
+          },
+          {
+            label: "İhale Yönetimi",
+            value: tendersCount,
+            icon: PackageOpen,
+            color: "text-purple-600",
+            bg: "bg-purple-50",
+            link: "/tenders",
+          },
+          {
+            label: "Tanımlı Malzemeler",
+            value: masterItemsCount,
+            icon: Package,
+            color: "text-indigo-600",
+            bg: "bg-indigo-50",
+            link: "/master-items",
+          },
+          {
+            label: "Toplam Stok Kalemi",
+            value: totalStock,
+            icon: Database,
+            color: "text-emerald-600",
+            bg: "bg-emerald-50",
+            link: null,
+          },
+        ].map((stat, i) => (
+          <div
+            key={i}
+            className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100/50 hover:shadow-md transition-shadow relative overflow-hidden group"
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className={cn("p-2.5 rounded-2xl", stat.bg, stat.color)}>
+                <stat.icon className="w-5 h-5 pointer-events-none" />
+              </div>
+              {stat.link && (
+                <Link
+                  href={stat.link}
+                  className="text-gray-300 hover:text-gray-900 transition-colors p-1 z-10"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
+            <div>
+              <p className="text-[13px] font-medium text-gray-500 mb-1">
+                {stat.label}
+              </p>
+              <h4 className="text-3xl font-display font-semibold text-gray-900">
+                {stat.value}
+              </h4>
+            </div>
+            {/* Soft decorative blur */}
+            <div
+              className={cn(
+                "absolute -bottom-6 -right-6 w-24 h-24 rounded-full blur-2xl opacity-20 pointer-events-none transition-opacity group-hover:opacity-40",
+                stat.bg,
+              )}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Main Grid: Charts & Recents */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Bar Chart */}
+        <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100/50 flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold text-gray-900">
+              Birimlere Göre Envanter Dağılımı
+            </h3>
+          </div>
+          <div className="flex-1 min-h-[300px]">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minWidth={0}
+              minHeight={0}
+            >
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
-                Yedekleme Paneli
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        )}
-        {personnelCount === 0 && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-            <div className="flex">
-              <Users className="h-5 w-5 text-yellow-400" />
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  Sistemde kayıtlı personel bulunmuyor. <Link href="/personnel" className="font-medium underline">Personel ekleyin</Link>.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {masterItemsCount === 0 && (
-          <div className="bg-orange-50 border-l-4 border-orange-400 p-4">
-            <div className="flex">
-              <AlertTriangle className="h-5 w-5 text-orange-400" />
-              <div className="ml-3">
-                <p className="text-sm text-orange-700">
-                  Sistemde tanımlı malzeme bulunmuyor. <Link href="/master-items" className="font-medium underline">Malzeme tanımlayın</Link>.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Top Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="bg-white p-5 shadow rounded-lg flex items-center">
-          <div className="p-3 bg-red-100 rounded-full">
-            <Users className="h-6 w-6 text-red-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Kayıtlı Personel</p>
-            <p className="text-2xl font-semibold text-gray-900">{personnelCount}</p>
-          </div>
-        </div>
-        <Link href="/tenders" className="bg-white p-5 shadow rounded-lg flex items-center hover:bg-gray-50 transition-colors">
-          <div className="p-3 bg-purple-100 rounded-full">
-            <PackageOpen className="h-6 w-6 text-purple-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">İhale Yönetimi</p>
-            <p className="text-2xl font-semibold text-gray-900">{tendersCount}</p>
-          </div>
-        </Link>
-        <div className="bg-white p-5 shadow rounded-lg flex items-center">
-          <div className="p-3 bg-blue-100 rounded-full">
-            <PackageOpen className="h-6 w-6 text-blue-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Tanımlı Malzeme</p>
-            <p className="text-2xl font-semibold text-gray-900">{masterItemsCount}</p>
-          </div>
-        </div>
-        <div className="bg-white p-5 shadow rounded-lg flex items-center">
-          <div className="p-3 bg-green-100 rounded-full">
-            <Package className="h-6 w-6 text-green-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Toplam Stok Kalemi</p>
-            <p className="text-2xl font-semibold text-gray-900">{unitStats.reduce((acc, s) => acc + s.itemCount, 0)}</p>
-          </div>
-        </div>
-        <div className="bg-white p-5 shadow rounded-lg flex items-center">
-          <div className="p-3 bg-red-100 rounded-full">
-            <AlertCircle className="h-6 w-6 text-red-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Biten Stok</p>
-            <p className="text-2xl font-semibold text-gray-900">{unitStats.reduce((acc, s) => acc + s.zeroStockCount, 0)}</p>
-          </div>
-        </div>
-        <div className="bg-white p-5 shadow rounded-lg flex items-center">
-          <div className="p-3 bg-yellow-100 rounded-full">
-            <AlertTriangle className="h-6 w-6 text-yellow-600" />
-          </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">Kritik Stok</p>
-            <p className="text-2xl font-semibold text-gray-900">{unitStats.reduce((acc, s) => acc + s.lowStockCount, 0)}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 shadow rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Birimlere Göre Malzeme Dağılımı</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#64748b" }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#64748b" }}
+                />
+                <Tooltip
+                  cursor={{ fill: "#f8fafc" }}
+                  contentStyle={{
+                    borderRadius: "16px",
+                    border: "none",
+                    boxShadow:
+                      "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+                  }}
+                />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={60}>
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -284,196 +357,279 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 shadow rounded-lg">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Stok Oranı</h3>
-          <div className="h-64 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
+        {/* Recent Activity List */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100/50 flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <History className="w-5 h-5 text-gray-400" />
+              Son Hareketler
+            </h3>
+            <Link
+              href="/statistics"
+              className="text-xs font-medium text-gray-500 hover:text-gray-900 transition"
+            >
+              Tümü
+            </Link>
+          </div>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            {recentTransactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm">
+                İşlem bulunamadı
+              </div>
+            ) : (
+              recentTransactions.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex justify-between items-start group"
                 >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute flex flex-col items-center">
-              <span className="text-2xl font-bold">{unitStats.reduce((acc, s) => acc + s.itemCount, 0)}</span>
-              <span className="text-xs text-gray-500">Toplam</span>
-            </div>
+                  <div className="flex gap-3 items-start">
+                    <div
+                      className={cn(
+                        "mt-1 p-1.5 rounded-lg shrink-0",
+                        tx.type === "GİRİŞ"
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-red-50 text-red-600",
+                      )}
+                    >
+                      {tx.type === "GİRİŞ" ? (
+                        <ArrowDownRight className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 leading-snug">
+                        {tx.unit}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {personnelMap[tx.personnelId] || "Bilinmiyor"} •{" "}
+                        {tx.type}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p
+                      className={cn(
+                        "text-sm font-semibold font-mono",
+                        tx.type === "GİRİŞ"
+                          ? "text-emerald-600"
+                          : "text-gray-900",
+                      )}
+                    >
+                      {tx.type === "GİRİŞ" ? "+" : "-"}
+                      {tx.quantity}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date(tx.date).toLocaleDateString("tr-TR", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {/* Unit Specific Cards */}
-      <h2 className="text-xl font-semibold text-gray-900 mt-8">Birim Bazlı İstatistikler</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {unitStats.map((stats, index) => {
-          const Icon = UNIT_ICONS[stats.name];
-          const unitPath = stats.name === 'Vefa Temizlik' ? 'vefa' : 
-                           stats.name === 'Aşevi' ? 'asevi' :
-                           stats.name === 'Dergah' ? 'dergah' :
-                           stats.name === 'Bağış' ? 'bagis' : 'vakif';
-          
-          return (
-            <Link key={stats.name} href={`/unit/${unitPath}`} className="bg-white p-6 shadow rounded-lg hover:shadow-md transition-shadow border-t-4" style={{ borderTopColor: COLORS[index % COLORS.length] }}>
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-gray-50 rounded-lg">
-                  <Icon className="h-6 w-6 text-gray-600" />
-                </div>
-                <div className="flex flex-col space-y-1">
-                  {stats.zeroStockCount > 0 && (
-                    <span className="bg-red-100 text-red-800 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {stats.zeroStockCount} Bitti
-                    </span>
-                  )}
-                  {stats.lowStockCount > 0 && (
-                    <span className="bg-yellow-100 text-yellow-800 text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      {stats.lowStockCount} Kritik
-                    </span>
-                  )}
-                </div>
+      {/* Warning Cards specific for Bento */}
+      {(unitStats.reduce((acc, s) => acc + s.zeroStockCount, 0) > 0 ||
+        unitStats.reduce((acc, s) => acc + s.lowStockCount, 0) > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {unitStats.reduce((acc, s) => acc + s.lowStockCount, 0) > 0 && (
+            <div className="bg-gradient-to-br from-amber-400 to-amber-500 rounded-3xl p-6 text-white shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-amber-100 text-sm font-medium mb-1">
+                  Kritik Stok Uyarıları
+                </p>
+                <h4 className="text-3xl font-display font-semibold">
+                  {unitStats.reduce((acc, s) => acc + s.lowStockCount, 0)} Kalem
+                </h4>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">{stats.name}</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Toplam Malzeme:</span>
-                  <span className="font-semibold">{stats.itemCount}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Toplam İşlem:</span>
-                  <span className="font-semibold">{stats.transactionCount}</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-1.5 mt-4">
-                  <div 
-                    className="h-1.5 rounded-full" 
-                    style={{ 
-                      width: `${stats.itemCount > 0 ? 100 : 0}%`, 
-                      backgroundColor: COLORS[index % COLORS.length] 
-                    }} 
-                  />
-                </div>
+              <div className="bg-white/20 p-4 rounded-full backdrop-blur-sm">
+                <AlertTriangle className="w-8 h-8 text-white" />
               </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Recent Transactions Table */}
-      <div className="bg-white shadow sm:rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Son İşlemler</h3>
-          <Link href="/statistics" className="text-sm text-red-600 hover:text-red-800 font-medium">Tüm Raporlar →</Link>
-        </div>
-        <ul className="divide-y divide-gray-200">
-          {recentTransactions.length === 0 ? (
-            <li className="px-4 py-8 text-center text-gray-500">Henüz işlem bulunmuyor.</li>
-          ) : (
-            recentTransactions.map((tx) => (
-              <li key={tx.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className={`p-2 rounded-full mr-3 ${tx.type === 'GİRİŞ' ? 'bg-green-100' : 'bg-red-100'}`}>
-                      {tx.type === 'GİRİŞ' ? (
-                        <ArrowDownRight className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <ArrowUpRight className="h-4 w-4 text-red-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">
-                        {tx.unit}
-                      </p>
-                      <p className="text-xs text-gray-500">{tx.type} İşlemi</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{tx.quantity} Birim</p>
-                    <p className="text-xs text-gray-500">{new Date(tx.date).toLocaleDateString('tr-TR')}</p>
-                  </div>
-                </div>
-                <div className="mt-2 flex justify-between items-center">
-                  <p className="text-xs text-gray-500">
-                    Sorumlu: <span className="font-medium text-gray-700">{personnelMap[tx.personnelId] || 'Bilinmiyor'}</span>
-                  </p>
-                  <p className="text-xs text-gray-400">Evrak: {tx.documentNo}</p>
-                </div>
-              </li>
-            ))
+            </div>
           )}
-        </ul>
+          {unitStats.reduce((acc, s) => acc + s.zeroStockCount, 0) > 0 && (
+            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-3xl p-6 text-white shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-red-100 text-sm font-medium mb-1">
+                  Biten Stok Uyarıları
+                </p>
+                <h4 className="text-3xl font-display font-semibold">
+                  {unitStats.reduce((acc, s) => acc + s.zeroStockCount, 0)}{" "}
+                  Kalem
+                </h4>
+              </div>
+              <div className="bg-white/20 p-4 rounded-full backdrop-blur-sm">
+                <AlertCircle className="w-8 h-8 text-white" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Units Bento Grid */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 px-1">
+          Birim Yönetimi
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {unitStats.map((stats, i) => {
+            const Icon = UNIT_ICONS[stats.name];
+            const unitPath =
+              stats.name === "Vefa Temizlik"
+                ? "vefa"
+                : stats.name === "Aşevi"
+                  ? "asevi"
+                  : stats.name === "Dergah"
+                    ? "dergah"
+                    : stats.name === "Bağış"
+                      ? "bagis"
+                      : "vakif";
+            return (
+              <Link
+                key={stats.name}
+                href={`/unit/${unitPath}`}
+                className="group bg-white rounded-3xl p-5 shadow-sm border border-gray-100/50 hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center transition-colors"
+                    style={{
+                      backgroundColor: `${COLORS[i % COLORS.length]}15`,
+                      color: COLORS[i % COLORS.length],
+                    }}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col items-end space-y-1">
+                    {stats.zeroStockCount > 0 && (
+                      <span className="flex items-center text-[10px] font-bold bg-red-50 text-red-600 px-2 py-0.5 rounded-full">
+                        <AlertCircle className="w-2.5 h-2.5 mr-1" />
+                        {stats.zeroStockCount} Bitti
+                      </span>
+                    )}
+                    {stats.lowStockCount > 0 && (
+                      <span className="flex items-center text-[10px] font-bold bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full">
+                        <AlertTriangle className="w-2.5 h-2.5 mr-1" />
+                        {stats.lowStockCount} Kritik
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-lg">
+                    {stats.name}
+                  </h3>
+                  <div className="mt-2 flex items-center justify-between text-[13px] text-gray-500">
+                    <span>{stats.itemCount} Kalem</span>
+                    <span className="flex items-center">
+                      {stats.transactionCount} İşlem
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Report Modal */}
       {showReportModal && (
-        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <div className="flex items-center mb-4 text-red-600">
-              <Calendar className="w-6 h-6 mr-2" />
-              <h3 className="text-lg font-medium text-gray-900">Aylık Envanter Raporu</h3>
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-[100] flex justify-center items-end sm:items-center p-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden"
+          >
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-gray-400" /> Rapor Oluştur
+              </h3>
             </div>
-            <p className="text-sm text-gray-500 mb-6">
-              Tüm birimlerin seçilen aydaki stok giriş ve çıkış hareketlerini içeren detaylı raporu hazırlar.
-            </p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Yıl</label>
-                <select
-                  value={reportYear}
-                  onChange={(e) => setReportYear(Number(e.target.value))}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
-                >
-                  {[2023, 2024, 2025, 2026].map(y => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
+            <div className="p-6 space-y-5 flex flex-col">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">
+                    Yıl
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={reportYear}
+                      onChange={(e) => setReportYear(Number(e.target.value))}
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-gray-900 focus:border-gray-900 block p-3 appearance-none font-medium outline-none"
+                    >
+                      {[2023, 2024, 2025, 2026].map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1.5 block uppercase tracking-wider">
+                    Ay
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={reportMonth}
+                      onChange={(e) => setReportMonth(Number(e.target.value))}
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-gray-900 focus:border-gray-900 block p-3 appearance-none font-medium outline-none"
+                    >
+                      {[
+                        "Ocak",
+                        "Şubat",
+                        "Mart",
+                        "Nisan",
+                        "Mayıs",
+                        "Haziran",
+                        "Temmuz",
+                        "Ağustos",
+                        "Eylül",
+                        "Ekim",
+                        "Kasım",
+                        "Aralık",
+                      ].map((m, i) => (
+                        <option key={i} value={i}>
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Ay</label>
-                <select
-                  value={reportMonth}
-                  onChange={(e) => setReportMonth(Number(e.target.value))}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
-                >
-                  {["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"].map((m, i) => (
-                    <option key={i} value={i}>{m}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
-            <div className="flex justify-end space-x-3 mt-8">
-              <button
-                onClick={() => setShowReportModal(false)}
-                className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                İptal
-              </button>
-              <button
-                onClick={() => {
-                  generateMonthlyInventoryReport(allItems, allTransactions, allPersonnel, reportMonth, reportYear);
-                  setShowReportModal(false);
-                }}
-                className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-              >
-                Raporu Oluştur
-              </button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={() => {
+                    generateMonthlyInventoryReport(
+                      allItems,
+                      allTransactions,
+                      allPersonnel,
+                      reportMonth,
+                      reportYear,
+                    );
+                    setShowReportModal(false);
+                  }}
+                  className="flex-[2] justify-center px-4 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors shadow-sm"
+                >
+                  Rapor İndir
+                </button>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
     </div>
   );
 }
-

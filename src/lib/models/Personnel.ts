@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IPersonnel extends Document {
   name: string;
@@ -15,7 +15,8 @@ const PersonnelSchema: Schema = new Schema({
   tcNo: { type: String },
   password: { type: String },
   email: { type: String, required: true },
-  createdAt: { type: Number, required: true, default: () => Date.now() }
+  createdAt: { type: Number, required: true, default: () => Date.now() },
 });
 
-export default mongoose.models.Personnel || mongoose.model<IPersonnel>('Personnel', PersonnelSchema);
+export default mongoose.models.Personnel ||
+  mongoose.model<IPersonnel>("Personnel", PersonnelSchema);

@@ -1,6 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
-export type UnitType = 'Vefa Temizlik' | 'Aşevi' | 'Dergah' | 'Bağış' | 'Vakıf';
+export type UnitType = "Vefa Temizlik" | "Aşevi" | "Dergah" | "Bağış" | "Vakıf";
 
 export interface ITenderHistory {
   date: number;
@@ -19,7 +19,7 @@ export interface IItem extends Document {
   tenderName?: string;
   tenderEndDate?: number;
   tenderLimit?: number;
-  tenderType?: 'İhale' | 'Bağış';
+  tenderType?: "İhale" | "Bağış";
   tenderHistory?: ITenderHistory[];
   previousTenderStock?: number;
   totalReceived?: number;
@@ -35,15 +35,18 @@ const ItemSchema: Schema = new Schema({
   tenderName: { type: String },
   tenderEndDate: { type: Number },
   tenderLimit: { type: Number },
-  tenderType: { type: String, enum: ['İhale', 'Bağış'] },
-  tenderHistory: [{
-    date: { type: Number },
-    personnelId: { type: String },
-    personnelName: { type: String },
-    changes: { type: String }
-  }],
+  tenderType: { type: String, enum: ["İhale", "Bağış"] },
+  tenderHistory: [
+    {
+      date: { type: Number },
+      personnelId: { type: String },
+      personnelName: { type: String },
+      changes: { type: String },
+    },
+  ],
   previousTenderStock: { type: Number },
-  totalReceived: { type: Number, default: 0 }
+  totalReceived: { type: Number, default: 0 },
 });
 
-export default mongoose.models.Item || mongoose.model<IItem>('Item', ItemSchema);
+export default mongoose.models.Item ||
+  mongoose.model<IItem>("Item", ItemSchema);

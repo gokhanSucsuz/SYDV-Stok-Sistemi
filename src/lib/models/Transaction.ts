@@ -1,7 +1,7 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { UnitType } from './Item';
+import mongoose, { Schema, Document } from "mongoose";
+import { UnitType } from "./Item";
 
-export type TransactionType = 'GİRİŞ' | 'ÇIKIŞ';
+export type TransactionType = "GİRİŞ" | "ÇIKIŞ";
 
 export interface ITransaction extends Document {
   itemId: string;
@@ -18,13 +18,14 @@ export interface ITransaction extends Document {
 const TransactionSchema: Schema = new Schema({
   itemId: { type: String, required: true },
   unit: { type: String, required: true },
-  type: { type: String, required: true, enum: ['GİRİŞ', 'ÇIKIŞ'] },
+  type: { type: String, required: true, enum: ["GİRİŞ", "ÇIKIŞ"] },
   quantity: { type: Number, required: true },
   remainingStock: { type: Number, required: true },
   date: { type: Number, required: true },
   personnelId: { type: String, required: true },
   description: { type: String },
-  documentNo: { type: String, required: true }
+  documentNo: { type: String, required: true },
 });
 
-export default mongoose.models.Transaction || mongoose.model<ITransaction>('Transaction', TransactionSchema);
+export default mongoose.models.Transaction ||
+  mongoose.model<ITransaction>("Transaction", TransactionSchema);

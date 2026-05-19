@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IBackup extends Document {
   fileName: string;
@@ -9,7 +9,8 @@ export interface IBackup extends Document {
 const BackupSchema: Schema = new Schema({
   fileName: { type: String, required: true },
   createdAt: { type: Number, required: true, default: () => Date.now() },
-  data: { type: Schema.Types.Mixed, required: true }
+  data: { type: Schema.Types.Mixed, required: true },
 });
 
-export default mongoose.models.Backup || mongoose.model<IBackup>('Backup', BackupSchema);
+export default mongoose.models.Backup ||
+  mongoose.model<IBackup>("Backup", BackupSchema);

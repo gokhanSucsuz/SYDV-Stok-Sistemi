@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -15,7 +15,9 @@ if (!cached) {
 
 async function connectToDatabase() {
   if (!MONGODB_URI) {
-    throw new Error('MONGODB_URI ortam değişkeni (environment variable) bulunamadı. Lütfen AI Studio ayarlarından (Settings > Secrets) MONGODB_URI değerini ekleyin.');
+    throw new Error(
+      "MONGODB_URI ortam değişkeni (environment variable) bulunamadı. Lütfen AI Studio ayarlarından (Settings > Secrets) MONGODB_URI değerini ekleyin.",
+    );
   }
 
   if (cached.conn) {
@@ -25,14 +27,14 @@ async function connectToDatabase() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      dbName: 'stokDB',
+      dbName: "stokDB",
     };
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
       return mongoose;
     });
   }
-  
+
   try {
     cached.conn = await cached.promise;
   } catch (e) {

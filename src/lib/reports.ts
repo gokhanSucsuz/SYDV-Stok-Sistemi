@@ -1,16 +1,21 @@
-import { format } from 'date-fns';
-import { Item, Transaction, Personnel } from './db';
-import { APP_LOGO_URL } from './constants';
+import { format } from "date-fns";
+import { Item, Transaction, Personnel } from "./db";
+import { APP_LOGO_URL } from "./constants";
 
 export const generateBulkMuayeneKabul = (
-  items: { name: string; quantity: number; unit: string; measurementUnit: string }[],
+  items: {
+    name: string;
+    quantity: number;
+    unit: string;
+    measurementUnit: string;
+  }[],
   personnel: Personnel[],
   documentNo: string,
   tenderName: string,
-  currentUser?: Personnel | null
+  currentUser?: Personnel | null,
 ) => {
   const now = new Date();
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
   const html = `
@@ -50,7 +55,7 @@ export const generateBulkMuayeneKabul = (
       </div>
       
       <div class="date-right">
-        Tarih: ${format(now, 'dd.MM.yyyy')}
+        Tarih: ${format(now, "dd.MM.yyyy")}
       </div>
 
       <div class="title">MUAYENE VE KABUL TUTANAĞI</div>
@@ -72,7 +77,9 @@ export const generateBulkMuayeneKabul = (
           </tr>
         </thead>
         <tbody>
-          ${items.map((item, index) => `
+          ${items
+            .map(
+              (item, index) => `
             <tr>
               <td>${index + 1}</td>
               <td>${item.name}</td>
@@ -80,7 +87,9 @@ export const generateBulkMuayeneKabul = (
               <td>${item.measurementUnit}</td>
               <td>${item.unit}</td>
             </tr>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </tbody>
       </table>
 
@@ -89,18 +98,23 @@ export const generateBulkMuayeneKabul = (
       </div>
 
       <div class="footer">
-        ${personnel.slice(0, 3).map(p => `
+        ${personnel
+          .slice(0, 3)
+          .map(
+            (p) => `
           <div class="signature">
             <p><strong>${p.name}</strong></p>
             <p>${p.title}</p>
             <br/><br/>
             <p>(İmza)</p>
           </div>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
 
       <div class="report-footer">
-        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : 'Sistem'} | Yazdırılma: ${format(now, 'dd.MM.yyyy HH:mm')}
+        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : "Sistem"} | Yazdırılma: ${format(now, "dd.MM.yyyy HH:mm")}
       </div>
 
       <script>
@@ -123,17 +137,21 @@ export const generateItemReport = (
   relatedItems: Item[],
   transactions: Transaction[],
   personnel: Personnel[],
-  type: 'all' | 'single' = 'all',
-  currentUser?: Personnel | null
+  type: "all" | "single" = "all",
+  currentUser?: Personnel | null,
 ) => {
   const now = new Date();
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
-  const personnelMap = new Map(personnel.map(p => [p.id, p.name]));
-  const itemIds = type === 'all' ? new Set(relatedItems.map(i => i.id)) : new Set([mainItem.id]);
-  
-  const filteredTransactions = transactions.filter(tx => itemIds.has(tx.itemId))
+  const personnelMap = new Map(personnel.map((p) => [p.id, p.name]));
+  const itemIds =
+    type === "all"
+      ? new Set(relatedItems.map((i) => i.id))
+      : new Set([mainItem.id]);
+
+  const filteredTransactions = transactions
+    .filter((tx) => itemIds.has(tx.itemId))
     .sort((a, b) => b.date - a.date);
 
   const html = `
@@ -172,7 +190,7 @@ export const generateItemReport = (
       </div>
       
       <div class="date-right">
-        Rapor Tarihi: ${format(now, 'dd.MM.yyyy HH:mm')}
+        Rapor Tarihi: ${format(now, "dd.MM.yyyy HH:mm")}
       </div>
 
       <div class="title">${mainItem.name.toUpperCase()} STOK HAREKET VE DURUM RAPORU</div>
@@ -190,16 +208,20 @@ export const generateItemReport = (
           </tr>
         </thead>
         <tbody>
-          ${relatedItems.map(item => `
+          ${relatedItems
+            .map(
+              (item) => `
             <tr>
-              <td>${item.tenderName || 'Genel Stok'}</td>
+              <td>${item.tenderName || "Genel Stok"}</td>
               <td>${item.unit}</td>
-              <td>${item.tenderLimit || '-'} ${item.measurementUnit}</td>
+              <td>${item.tenderLimit || "-"} ${item.measurementUnit}</td>
               <td>${item.totalReceived || 0} ${item.measurementUnit}</td>
               <td style="font-weight:bold;">${item.currentStock} ${item.measurementUnit}</td>
-              <td>${item.tenderEndDate ? (item.tenderEndDate < Date.now() ? 'Süresi Doldu' : 'Aktif') : 'Süresiz'}</td>
+              <td>${item.tenderEndDate ? (item.tenderEndDate < Date.now() ? "Süresi Doldu" : "Aktif") : "Süresiz"}</td>
             </tr>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </tbody>
       </table>
 
@@ -218,22 +240,26 @@ export const generateItemReport = (
           </tr>
         </thead>
         <tbody>
-          ${filteredTransactions.length === 0 ? '<tr><td colspan="8" style="text-align:center;">İşlem kaydı bulunamadı.</td></tr>' : 
-            filteredTransactions.map(tx => {
-              const item = relatedItems.find(i => i.id === tx.itemId);
-              return `
+          ${
+            filteredTransactions.length === 0
+              ? '<tr><td colspan="8" style="text-align:center;">İşlem kaydı bulunamadı.</td></tr>'
+              : filteredTransactions
+                  .map((tx) => {
+                    const item = relatedItems.find((i) => i.id === tx.itemId);
+                    return `
                 <tr>
-                  <td>${format(tx.date, 'dd.MM.yyyy')}</td>
-                  <td>${item?.tenderName || 'Genel'}</td>
-                  <td style="color: ${tx.type === 'GİRİŞ' ? 'green' : 'red'}; font-weight: bold;">${tx.type}</td>
-                  <td>${tx.quantity} ${item?.measurementUnit || ''}</td>
-                  <td>${tx.remainingStock} ${item?.measurementUnit || ''}</td>
-                  <td>${personnelMap.get(tx.personnelId) || '-'}</td>
+                  <td>${format(tx.date, "dd.MM.yyyy")}</td>
+                  <td>${item?.tenderName || "Genel"}</td>
+                  <td style="color: ${tx.type === "GİRİŞ" ? "green" : "red"}; font-weight: bold;">${tx.type}</td>
+                  <td>${tx.quantity} ${item?.measurementUnit || ""}</td>
+                  <td>${tx.remainingStock} ${item?.measurementUnit || ""}</td>
+                  <td>${personnelMap.get(tx.personnelId) || "-"}</td>
                   <td>${tx.documentNo}</td>
                   <td>${tx.description}</td>
                 </tr>
               `;
-            }).join('')
+                  })
+                  .join("")
           }
         </tbody>
       </table>
@@ -242,8 +268,8 @@ export const generateItemReport = (
         <div class="signature">
           <p>Hazırlayan</p>
           <br/><br/>
-          <p><strong>${currentUser?.name || '................................'}</strong></p>
-          <p>${currentUser?.title || 'Vakıf Personeli'}</p>
+          <p><strong>${currentUser?.name || "................................"}</strong></p>
+          <p>${currentUser?.title || "Vakıf Personeli"}</p>
         </div>
         <div class="signature">
           <p>Onaylayan</p>
@@ -254,7 +280,7 @@ export const generateItemReport = (
       </div>
 
       <div class="report-footer">
-        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : 'Sistem'} | Yazdırılma: ${format(now, 'dd.MM.yyyy HH:mm')}
+        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : "Sistem"} | Yazdırılma: ${format(now, "dd.MM.yyyy HH:mm")}
       </div>
 
       <script>
@@ -278,26 +304,38 @@ export const generateMonthlyInventoryReport = (
   personnel: Personnel[],
   month: number,
   year: number,
-  currentUser?: Personnel | null
+  currentUser?: Personnel | null,
 ) => {
   const now = new Date();
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
   const monthNames = [
-    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    "Ocak",
+    "Şubat",
+    "Mart",
+    "Nisan",
+    "Mayıs",
+    "Haziran",
+    "Temmuz",
+    "Ağustos",
+    "Eylül",
+    "Ekim",
+    "Kasım",
+    "Aralık",
   ];
 
   const startDate = new Date(year, month, 1);
   const endDate = new Date(year, month + 1, 0, 23, 59, 59);
 
-  const filteredTransactions = transactions.filter(tx => 
-    tx.date >= startDate.getTime() && tx.date <= endDate.getTime()
-  ).sort((a, b) => a.date - b.date);
+  const filteredTransactions = transactions
+    .filter(
+      (tx) => tx.date >= startDate.getTime() && tx.date <= endDate.getTime(),
+    )
+    .sort((a, b) => a.date - b.date);
 
-  const itemMap = new Map(items.map(i => [i.id, i]));
-  const personnelMap = new Map(personnel.map(p => [p.id, p.name]));
+  const itemMap = new Map(items.map((i) => [i.id, i]));
+  const personnelMap = new Map(personnel.map((p) => [p.id, p.name]));
 
   const html = `
     <!DOCTYPE html>
@@ -335,7 +373,7 @@ export const generateMonthlyInventoryReport = (
       </div>
       
       <div class="date-right">
-        Rapor Tarihi: ${format(now, 'dd.MM.yyyy HH:mm')}
+        Rapor Tarihi: ${format(now, "dd.MM.yyyy HH:mm")}
       </div>
 
       <div class="title">${monthNames[month].toUpperCase()} ${year} DÖNEMİ TÜM BİRİMLER STOK HAREKET RAPORU</div>
@@ -355,23 +393,27 @@ export const generateMonthlyInventoryReport = (
           </tr>
         </thead>
         <tbody>
-          ${filteredTransactions.length === 0 ? '<tr><td colspan="9" style="text-align:center;">Bu dönemde herhangi bir hareket bulunmamaktadır.</td></tr>' : 
-            filteredTransactions.map((tx, index) => {
-              const item = itemMap.get(tx.itemId);
-              return `
+          ${
+            filteredTransactions.length === 0
+              ? '<tr><td colspan="9" style="text-align:center;">Bu dönemde herhangi bir hareket bulunmamaktadır.</td></tr>'
+              : filteredTransactions
+                  .map((tx, index) => {
+                    const item = itemMap.get(tx.itemId);
+                    return `
                 <tr>
                   <td>${index + 1}</td>
-                  <td>${format(tx.date, 'dd.MM.yyyy')}</td>
+                  <td>${format(tx.date, "dd.MM.yyyy")}</td>
                   <td>${tx.unit}</td>
-                  <td>${item?.name || 'Bilinmeyen'}</td>
-                  <td style="color: ${tx.type === 'GİRİŞ' ? 'green' : 'red'}; font-weight: bold;">${tx.type}</td>
+                  <td>${item?.name || "Bilinmeyen"}</td>
+                  <td style="color: ${tx.type === "GİRİŞ" ? "green" : "red"}; font-weight: bold;">${tx.type}</td>
                   <td>${tx.quantity}</td>
-                  <td>${item?.measurementUnit || '-'}</td>
-                  <td>${personnelMap.get(tx.personnelId) || '-'}</td>
+                  <td>${item?.measurementUnit || "-"}</td>
+                  <td>${personnelMap.get(tx.personnelId) || "-"}</td>
                   <td>${tx.documentNo}</td>
                 </tr>
               `;
-            }).join('')
+                  })
+                  .join("")
           }
         </tbody>
       </table>
@@ -380,8 +422,8 @@ export const generateMonthlyInventoryReport = (
         <div class="signature">
           <p>Hazırlayan</p>
           <br/><br/>
-          <p><strong>${currentUser?.name || '................................'}</strong></p>
-          <p>${currentUser?.title || 'Vakıf Personeli'}</p>
+          <p><strong>${currentUser?.name || "................................"}</strong></p>
+          <p>${currentUser?.title || "Vakıf Personeli"}</p>
         </div>
         <div class="signature">
           <p>Onaylayan</p>
@@ -392,7 +434,7 @@ export const generateMonthlyInventoryReport = (
       </div>
 
       <div class="report-footer">
-        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : 'Sistem'} | Yazdırılma: ${format(now, 'dd.MM.yyyy HH:mm')}
+        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : "Sistem"} | Yazdırılma: ${format(now, "dd.MM.yyyy HH:mm")}
       </div>
 
       <script>
@@ -417,17 +459,18 @@ export const generateTenderReport = (
   allItems: Item[],
   transactions: Transaction[],
   personnel: Personnel[],
-  currentUser?: Personnel | null
+  currentUser?: Personnel | null,
 ) => {
   const now = new Date();
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
-  const personnelMap = new Map(personnel.map(p => [p.id, p.name]));
-  const tenderItemIds = new Set(tenderItems.map(i => i.id));
-  
+  const personnelMap = new Map(personnel.map((p) => [p.id, p.name]));
+  const tenderItemIds = new Set(tenderItems.map((i) => i.id));
+
   // Filter transactions related to this tender's items
-  const filteredTransactions = transactions.filter(tx => tenderItemIds.has(tx.itemId))
+  const filteredTransactions = transactions
+    .filter((tx) => tenderItemIds.has(tx.itemId))
     .sort((a, b) => b.date - a.date);
 
   const html = `
@@ -468,7 +511,7 @@ export const generateTenderReport = (
       </div>
       
       <div class="date-right">
-        Rapor Tarihi: ${format(now, 'dd.MM.yyyy HH:mm')}
+        Rapor Tarihi: ${format(now, "dd.MM.yyyy HH:mm")}
       </div>
 
       <div class="title">İHALE DETAY VE STOK DURUM RAPORU</div>
@@ -476,8 +519,8 @@ export const generateTenderReport = (
       <div class="info-box">
         <strong>İhale Adı:</strong> ${tenderName}<br/>
         <strong>Birim:</strong> ${unit}<br/>
-        <strong>İhale Türü:</strong> ${tenderItems[0]?.tenderType || 'İhale'}<br/>
-        <strong>Bitiş Tarihi:</strong> ${tenderItems[0]?.tenderEndDate ? format(tenderItems[0].tenderEndDate, 'dd.MM.yyyy') : 'Belirtilmemiş'}
+        <strong>İhale Türü:</strong> ${tenderItems[0]?.tenderType || "İhale"}<br/>
+        <strong>Bitiş Tarihi:</strong> ${tenderItems[0]?.tenderEndDate ? format(tenderItems[0].tenderEndDate, "dd.MM.yyyy") : "Belirtilmemiş"}
       </div>
 
       <div class="section-title">İHALE KAPSAMINDAKİ ÜRÜNLER VE STOK DURUMU</div>
@@ -494,18 +537,22 @@ export const generateTenderReport = (
           </tr>
         </thead>
         <tbody>
-          ${tenderItems.map((item, index) => {
-            const received = item.totalReceived || 0;
-            const current = item.currentStock || 0;
-            const spent = received - current;
-            
-            // Check other tenders for the same product
-            const otherTenders = allItems.filter(i => i.name === item.name && i.id !== item.id);
-            const otherTendersInfo = otherTenders.length > 0 
-              ? `${otherTenders.length} Farklı İhale (${otherTenders.reduce((acc, curr) => acc + (curr.currentStock || 0), 0)} ${item.measurementUnit})`
-              : 'Yok';
+          ${tenderItems
+            .map((item, index) => {
+              const received = item.totalReceived || 0;
+              const current = item.currentStock || 0;
+              const spent = received - current;
 
-            return `
+              // Check other tenders for the same product
+              const otherTenders = allItems.filter(
+                (i) => i.name === item.name && i.id !== item.id,
+              );
+              const otherTendersInfo =
+                otherTenders.length > 0
+                  ? `${otherTenders.length} Farklı İhale (${otherTenders.reduce((acc, curr) => acc + (curr.currentStock || 0), 0)} ${item.measurementUnit})`
+                  : "Yok";
+
+              return `
               <tr>
                 <td>${index + 1}</td>
                 <td>${item.name}</td>
@@ -516,7 +563,8 @@ export const generateTenderReport = (
                 <td>${otherTendersInfo}</td>
               </tr>
             `;
-          }).join('')}
+            })
+            .join("")}
         </tbody>
       </table>
 
@@ -534,21 +582,25 @@ export const generateTenderReport = (
           </tr>
         </thead>
         <tbody>
-          ${filteredTransactions.length === 0 ? '<tr><td colspan="7" style="text-align:center;">İşlem kaydı bulunamadı.</td></tr>' : 
-            filteredTransactions.map(tx => {
-              const item = tenderItems.find(i => i.id === tx.itemId);
-              return `
+          ${
+            filteredTransactions.length === 0
+              ? '<tr><td colspan="7" style="text-align:center;">İşlem kaydı bulunamadı.</td></tr>'
+              : filteredTransactions
+                  .map((tx) => {
+                    const item = tenderItems.find((i) => i.id === tx.itemId);
+                    return `
                 <tr>
-                  <td>${format(tx.date, 'dd.MM.yyyy')}</td>
-                  <td>${item?.name || 'Bilinmeyen'}</td>
-                  <td style="color: ${tx.type === 'GİRİŞ' ? 'green' : 'red'}; font-weight: bold;">${tx.type}</td>
-                  <td>${tx.quantity} ${item?.measurementUnit || ''}</td>
-                  <td>${personnelMap.get(tx.personnelId) || '-'}</td>
+                  <td>${format(tx.date, "dd.MM.yyyy")}</td>
+                  <td>${item?.name || "Bilinmeyen"}</td>
+                  <td style="color: ${tx.type === "GİRİŞ" ? "green" : "red"}; font-weight: bold;">${tx.type}</td>
+                  <td>${tx.quantity} ${item?.measurementUnit || ""}</td>
+                  <td>${personnelMap.get(tx.personnelId) || "-"}</td>
                   <td>${tx.documentNo}</td>
                   <td>${tx.description}</td>
                 </tr>
               `;
-            }).join('')
+                  })
+                  .join("")
           }
         </tbody>
       </table>
@@ -557,8 +609,8 @@ export const generateTenderReport = (
         <div class="signature">
           <p>Hazırlayan</p>
           <br/><br/>
-          <p><strong>${currentUser?.name || '................................'}</strong></p>
-          <p>${currentUser?.title || 'Vakıf Personeli'}</p>
+          <p><strong>${currentUser?.name || "................................"}</strong></p>
+          <p>${currentUser?.title || "Vakıf Personeli"}</p>
         </div>
         <div class="signature">
           <p>Onaylayan</p>
@@ -569,7 +621,7 @@ export const generateTenderReport = (
       </div>
 
       <div class="report-footer">
-        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : 'Sistem'} | Yazdırılma: ${format(now, 'dd.MM.yyyy HH:mm')}
+        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : "Sistem"} | Yazdırılma: ${format(now, "dd.MM.yyyy HH:mm")}
       </div>
 
       <script>
