@@ -63,6 +63,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        if (!AUTHORIZED_EMAILS.includes(firebaseUser.email || "")) {
+          await signOut(auth);
+          setUser(null);
+          setPersonnel(null);
+          localStorage.removeItem("sydv_personnel");
+          setLoginError("Sisteme sadece yetkili hesaplar ile erişilebilir.");
+          setLoading(false);
+          return;
+        }
         setUser(firebaseUser);
       } else {
         setUser(null);
@@ -79,7 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoginError(null);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      if (!AUTHORIZED_EMAILS.includes(result.user.email || "")) {
+        await signOut(auth);
+        throw new Error("Sisteme sadece yetkili hesap (edirnesydv@gmail.com) ile Google girişi yapılabilir.");
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -113,9 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     if (!user) throw new Error("Önce Google ile giriş yapmalısınız.");
 
-    const isSuperAdmin = user.email ? AUTHORIZED_EMAILS.includes(user.email) : false;
-    const role = isSuperAdmin ? "super_admin" : "personnel";
-    const status = isSuperAdmin ? "approved" : "pending";
+    // All new personnel created through the UI are standard personnel.
+    // Gökhan SUÇSUZ is forcefully cast to "super_admin" by the GET API.
+    const role = "personnel";
+    const status = "pending";
 
     const res = await fetch("/api/personnel", {
       method: "POST",
@@ -135,22 +149,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     await updateProfile(user, { displayName: data.name });
 
-    if (status === "approved") {
-      const getRes = await fetch("/api/personnel");
-      if (getRes.ok) {
-        const all: Personnel[] = await getRes.json();
-        const newP = all.find(
-          (p) => p.email === user.email && p.name === data.name,
-        );
-        if (newP) {
-          setPersonnel(newP);
-          localStorage.setItem("sydv_personnel", JSON.stringify(newP));
-        }
-      }
-    } else {
-        // Will be redirected to a pending screen or handled by login checks
-        router.push("/pending-approval");
-    }
+    // Will be redirected to a pending screen or handled by login checks
+    router.push("/pending-approval");
   };
 
   const logout = async () => {

@@ -4,5 +4,4 @@ export const APP_NAME = "Edirne SYDV Stok";
 export const APP_SUBTITLE = "Stok Yönetim Sistemi";
 export const AUTHORIZED_EMAILS = [
   "edirnesydv@gmail.com",
-  "real.lucifer22@gmail.com",
 ];

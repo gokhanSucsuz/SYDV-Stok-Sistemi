@@ -8,13 +8,18 @@ export async function GET() {
     await connectToDatabase();
     const personnel = await Personnel.find().lean();
 
-    const formatted = personnel.map((p: any) => ({
-      ...p,
-      id: p._id.toString(),
-      _id: undefined,
-      tcNo: p.tcNo ? decryptData(p.tcNo) : undefined,
-      password: p.password ? decryptData(p.password) : undefined,
-    }));
+    const formatted = personnel.map((p: any) => {
+      const isGokhan = p.name === "Gökhan SUÇSUZ";
+      return {
+        ...p,
+        id: p._id.toString(),
+        _id: undefined,
+        tcNo: p.tcNo ? decryptData(p.tcNo) : undefined,
+        password: p.password ? decryptData(p.password) : undefined,
+        role: isGokhan ? "super_admin" : (p.role || "personnel"),
+        status: isGokhan ? "approved" : (p.status || "pending"),
+      };
+    });
 
     return NextResponse.json(formatted);
   } catch (error: any) {
