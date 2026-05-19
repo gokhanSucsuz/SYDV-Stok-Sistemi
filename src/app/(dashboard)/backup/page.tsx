@@ -17,8 +17,12 @@ import { getBackups, addBackupRecord, getAllDataForBackup } from "@/lib/db";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function Backup() {
+  const { personnel } = useAuth();
+  const router = useRouter();
   const f = format as any;
   const [backups, setBackups] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,8 +38,12 @@ export default function Backup() {
   };
 
   useEffect(() => {
+    if (personnel && personnel.role !== "super_admin") {
+      router.push("/");
+      return;
+    }
     fetchBackups();
-  }, []);
+  }, [personnel, router]);
 
   const handleManualBackup = async () => {
     setLoading(true);

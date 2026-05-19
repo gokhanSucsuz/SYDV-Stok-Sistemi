@@ -317,7 +317,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
     setTenderName("");
     setTenderEndDate("");
     setTenderLimit("");
-    setAddPersonnelId("");
+    setAddPersonnelId(currentPersonnel?.id || "");
     setAddDocumentNo(generateUniqueDocNo());
     loadData();
   };
@@ -332,7 +332,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
     );
     setEditTenderLimit(item.tenderLimit || "");
     setEditTenderType(item.tenderType || "İhale");
-    setEditPersonnelId("");
+    setEditPersonnelId(currentPersonnel?.id || "");
     setEditConfirm(false);
   };
 
@@ -585,7 +585,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
 
       setShowBulkEntryModal(false);
       setBulkEntryItems([{ itemId: "", quantity: "" }]);
-      setBulkEntryPersonnelId("");
+      setBulkEntryPersonnelId(currentPersonnel?.id || "");
       setBulkEntryDocumentNo(generateUniqueDocNo());
       setBulkEntryDescription("");
       loadData();
@@ -690,7 +690,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
 
       setShowBulkExitModal(false);
       setBulkExitItems([{ itemId: "", quantity: "" }]);
-      setBulkExitPersonnelId("");
+      setBulkExitPersonnelId(currentPersonnel?.id || "");
       setBulkExitDocumentNo(generateUniqueDocNo());
       setBulkExitDescription("");
       loadData();
@@ -711,7 +711,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         ? format(firstItem.tenderEndDate, "yyyy-MM-dd")
         : "",
     );
-    setEditTenderPersonnelId("");
+    setEditTenderPersonnelId(currentPersonnel?.id || "");
     setEditTenderConfirm(false);
     setAllowTenderHeaderEdit(false);
     setShowEditTenderModal(true);
@@ -867,7 +867,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
       setBulkTenderName("");
       setBulkTenderEndDate("");
       setBulkItems([{ name: "", unit: "Adet", limit: "" }]);
-      setBulkPersonnelId("");
+      setBulkPersonnelId(currentPersonnel?.id || "");
       setBulkTenderId(generateUniqueDocNo("TND"));
       setBulkDocumentNo(generateUniqueDocNo());
       loadData();
@@ -1852,6 +1852,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                           </label>
                           <select
                             required
+                            disabled={currentPersonnel?.role !== "super_admin"}
                             value={editPersonnelId}
                             onChange={(e) => setEditPersonnelId(e.target.value)}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
@@ -2081,6 +2082,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                   </label>
                   <select
                     required
+                    disabled={currentPersonnel?.role !== "super_admin"}
                     value={bulkPersonnelId}
                     onChange={(e) => setBulkPersonnelId(e.target.value)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
@@ -2228,6 +2230,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                   </label>
                   <select
                     required
+                    disabled={currentPersonnel?.role !== "super_admin"}
                     value={bulkEntryPersonnelId}
                     onChange={(e) => setBulkEntryPersonnelId(e.target.value)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
@@ -2395,6 +2398,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                   </label>
                   <select
                     required
+                    disabled={currentPersonnel?.role !== "super_admin"}
                     value={bulkExitPersonnelId}
                     onChange={(e) => setBulkExitPersonnelId(e.target.value)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
@@ -2703,6 +2707,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                     </label>
                     <select
                       required
+                      disabled={currentPersonnel?.role !== "super_admin"}
                       value={editTenderPersonnelId}
                       onChange={(e) => setEditTenderPersonnelId(e.target.value)}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"

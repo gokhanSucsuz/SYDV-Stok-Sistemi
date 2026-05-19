@@ -6,6 +6,8 @@ export interface IPersonnel extends Document {
   tcNo?: string;
   password?: string;
   email: string;
+  role: "super_admin" | "personnel";
+  status: "pending" | "approved" | "rejected";
   createdAt: number;
 }
 
@@ -15,6 +17,16 @@ const PersonnelSchema: Schema = new Schema({
   tcNo: { type: String },
   password: { type: String },
   email: { type: String, required: true },
+  role: {
+    type: String,
+    enum: ["super_admin", "personnel"],
+    default: "personnel",
+  },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
   createdAt: { type: Number, required: true, default: () => Date.now() },
 });
 

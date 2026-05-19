@@ -28,7 +28,7 @@ const navigation = [
   { name: "Genel Bakış", href: "/", icon: LayoutDashboard },
   { name: "İhale Yönetimi", href: "/tenders", icon: PackageOpen },
   { name: "Malzeme Listesi", href: "/master-items", icon: PackageOpen },
-  { name: "Personel Sicil", href: "/personnel", icon: Users },
+  { name: "Personel Sicil", href: "/personnel", icon: Users, adminOnly: true },
   {
     name: "Birimler",
     subItems: [
@@ -39,8 +39,8 @@ const navigation = [
       { name: "Vakıf", href: "/unit/vakif", icon: Building2 },
     ],
   },
-  { name: "Raporlar", href: "/statistics", icon: BarChart3 },
-  { name: "Sistem Yedekleri", href: "/backup", icon: Database },
+  { name: "Raporlar", href: "/statistics", icon: BarChart3, adminOnly: true },
+  { name: "Sistem Yedekleri", href: "/backup", icon: Database, adminOnly: true },
   { name: "Yardım Merkezi", href: "/guide", icon: BookOpen },
 ];
 
@@ -56,9 +56,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       !loading &&
       user &&
       !personnel &&
-      !pathname.startsWith("/register")
+      !pathname.startsWith("/register") &&
+      !pathname.startsWith("/pending-approval")
     )
       router.push("/register");
+    else if (!loading && user && personnel && personnel.status === "pending" && !pathname.startsWith("/pending-approval")) {
+      router.push("/pending-approval");
+    }
   }, [user, personnel, loading, router, pathname]);
 
   if (loading) {
@@ -69,7 +73,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || (!personnel && !pathname.startsWith("/register"))) return null;
+  if (!user || (!personnel && !pathname.startsWith("/register") && !pathname.startsWith("/pending-approval")) || (personnel && personnel.status === "pending" && !pathname.startsWith("/pending-approval"))) return null;
 
   const NavContent = () => (
     <div className="flex flex-col h-full bg-white shadow-xl lg:shadow-none lg:border-r border-gray-200 w-72">
@@ -96,6 +100,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-8">
         {navigation.map((group, i) => {
+          if (group.adminOnly && personnel?.role !== "super_admin") return null;
+
           if (group.subItems) {
             return (
               <div key={i} className="space-y-2">
@@ -158,7 +164,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* User Section */}
       {personnel && (
         <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm flex items-center space-x-3">
+          <Link href="/profile" className="bg-white rounded-2xl border border-gray-200 p-3 shadow-sm flex items-center space-x-3 hover:bg-gray-50 hover:border-gray-300 transition-all cursor-pointer">
             <div className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-tr from-red-100 to-red-50 flex items-center justify-center border border-red-100">
               <span className="font-semibold text-red-700 text-sm tracking-tight">
                 {personnel.name
@@ -178,13 +184,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </p>
             </div>
             <button
-              onClick={() => logout()}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); logout(); }}
               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors shrink-0"
               title="Çıkış Yap"
             >
               <LogOut className="w-4 h-4" />
             </button>
-          </div>
+          </Link>
         </div>
       )}
     </div>

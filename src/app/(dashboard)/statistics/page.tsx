@@ -28,11 +28,13 @@ import { tr } from "date-fns/locale";
 import { APP_LOGO_URL } from "@/lib/constants";
 import { Printer, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
 export default function Statistics() {
   const { personnel: currentPersonnel } = useAuth();
+  const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -43,6 +45,10 @@ export default function Statistics() {
   const [reportUnit, setReportUnit] = useState<UnitType | "Tümü">("Tümü");
 
   useEffect(() => {
+    if (currentPersonnel && currentPersonnel.role !== "super_admin") {
+      router.push("/");
+      return;
+    }
     const loadData = async () => {
       const [i, t, p] = await Promise.all([
         getAllItems(),
@@ -54,7 +60,7 @@ export default function Statistics() {
       setPersonnel(p);
     };
     loadData();
-  }, []);
+  }, [currentPersonnel, router]);
 
   // Prepare data for charts
   const itemsByUnit = items.reduce(

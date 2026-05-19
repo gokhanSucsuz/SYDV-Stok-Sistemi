@@ -21,6 +21,8 @@ export interface Personnel {
   tcNo?: string;
   password?: string;
   email: string;
+  role?: "super_admin" | "personnel";
+  status?: "pending" | "approved" | "rejected";
   createdAt?: number;
 }
 
@@ -31,7 +33,6 @@ interface AuthContextType {
   loginError: string | null;
   loginWithGoogle: () => Promise<void>;
   loginWithPassword: (personnelId: string, password: string) => Promise<void>;
-  loginWithEmail: (email: string, pass: string) => Promise<void>;
   registerPersonnel: (data: {
     name: string;
     title: string;
@@ -51,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Try to load personnel from localStorage
     const savedPersonnel = localStorage.getItem("sydv_personnel");
     if (savedPersonnel) {
       try {
@@ -63,15 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        if (firebaseUser.email === AUTHORIZED_EMAIL) {
-          setUser(firebaseUser);
-          // Don't override personnel with null if we already loaded from localStorage
-        } else {
-          await signOut(auth);
-          setUser(null);
-          setPersonnel(null);
-          localStorage.removeItem("sydv_personnel");
-        }
+        setUser(firebaseUser);
       } else {
         setUser(null);
         setPersonnel(null);
@@ -87,13 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoginError(null);
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      if (result.user.email !== AUTHORIZED_EMAIL) {
-        await signOut(auth);
-        throw new Error(
-          "Sisteme erişim yetkiniz bulunmamaktadır. Lütfen sistem yöneticisi ile iletişime geçiniz.",
-        );
-      }
+      await signInWithPopup(auth, provider);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -107,19 +93,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!res.ok) throw new Error("Personel listesi alınamadı.");
     const allPersonnel: Personnel[] = await res.json();
     const found = allPersonnel.find((p) => p.id === personnelId);
+    
     if (!found || found.password !== password) {
       throw new Error("Hatalı şifre.");
+    }
+    if (found.status !== "approved") {
+      throw new Error("Hesabınız henüz onaylanmadı. Lütfen yönetici onayını bekleyin.");
     }
     setPersonnel(found);
     localStorage.setItem("sydv_personnel", JSON.stringify(found));
   };
 
-  const loginWithEmail = async (email: string, pass: string) => {
-    if (!user || user.email !== AUTHORIZED_EMAIL) {
-      throw new Error("Öncelikle Google ile giriş yapmalısınız.");
-    }
-    await signInWithEmailAndPassword(auth, email, pass);
-  };
 
   const registerPersonnel = async (data: {
     name: string;
@@ -127,8 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     tcNo: string;
     password: string;
   }) => {
-    if (!user || user.email !== AUTHORIZED_EMAIL)
-      throw new Error("Yetkisiz işlem.");
+    if (!user) throw new Error("Önce Google ile giriş yapmalısınız.");
+
+    const role = user.email === AUTHORIZED_EMAIL ? "super_admin" : "personnel";
+    const status = user.email === AUTHORIZED_EMAIL ? "approved" : "pending";
 
     const res = await fetch("/api/personnel", {
       method: "POST",
@@ -136,6 +122,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({
         ...data,
         email: user.email,
+        role,
+        status,
       }),
     });
 
@@ -146,16 +134,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     await updateProfile(user, { displayName: data.name });
 
-    const getRes = await fetch("/api/personnel");
-    if (getRes.ok) {
-      const all: Personnel[] = await getRes.json();
-      const newP = all.find(
-        (p) => p.email === user.email && p.name === data.name,
-      );
-      if (newP) {
-        setPersonnel(newP);
-        localStorage.setItem("sydv_personnel", JSON.stringify(newP));
+    if (status === "approved") {
+      const getRes = await fetch("/api/personnel");
+      if (getRes.ok) {
+        const all: Personnel[] = await getRes.json();
+        const newP = all.find(
+          (p) => p.email === user.email && p.name === data.name,
+        );
+        if (newP) {
+          setPersonnel(newP);
+          localStorage.setItem("sydv_personnel", JSON.stringify(newP));
+        }
       }
+    } else {
+        // Will be redirected to a pending screen or handled by login checks
+        router.push("/pending-approval");
     }
   };
 
@@ -175,7 +168,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginError,
         loginWithGoogle,
         loginWithPassword,
-        loginWithEmail,
         registerPersonnel,
         logout,
       }}
@@ -192,3 +184,4 @@ export function useAuth() {
   }
   return context;
 }
+

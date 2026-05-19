@@ -8,6 +8,8 @@ export interface Personnel {
   tcNo?: string;
   password?: string;
   email: string;
+  role?: "super_admin" | "personnel";
+  status?: "pending" | "approved" | "rejected";
   createdAt?: number;
 }
 
