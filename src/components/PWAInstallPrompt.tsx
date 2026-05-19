@@ -2,20 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 
 export default function PWAInstallPrompt() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const { user } = useAuth(); // Only show if logged in
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      if (user) {
-        setShowPrompt(true);
-      }
+      setShowPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -23,7 +20,7 @@ export default function PWAInstallPrompt() {
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
-  }, [user]);
+  }, []);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -35,7 +32,7 @@ export default function PWAInstallPrompt() {
     }
   };
 
-  if (!showPrompt || !user) return null;
+  if (!showPrompt) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white border border-red-100 rounded-2xl p-4 shadow-xl shadow-red-900/5 z-50 flex items-start gap-4 animate-in slide-in-from-bottom-5">

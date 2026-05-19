@@ -160,12 +160,12 @@ export default function Personnel() {
                   key={person.id}
                   className="px-6 py-5 hover:bg-gray-50/80 transition-colors sm:flex sm:items-center sm:justify-between"
                 >
-                  <div className="flex items-center">
+                  <div className="flex items-start sm:items-center">
                     <div className="flex-shrink-0 h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
                       <UserCircle className="h-7 w-7 text-gray-400" />
                     </div>
-                    <div className="ml-4">
-                      <div className="flex items-center gap-2">
+                    <div className="ml-4 flex flex-col items-start w-full">
+                      <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold text-gray-900">
                           {person.name}
                         </p>
@@ -180,10 +180,10 @@ export default function Personnel() {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1 flex items-center">
+                      <div className="text-xs text-gray-500 mt-1.5 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                         <span className="truncate">{person.title}</span>
                         {person.tcNo && (
-                          <div className="flex items-center ml-2 border-l border-gray-200 pl-2">
+                          <div className="flex items-center sm:border-l sm:border-gray-200 sm:pl-2">
                             <span className="mr-1">
                               {showTcForms[person.id!] ? person.tcNo : "•••••••••••"}
                             </span>
@@ -202,7 +202,7 @@ export default function Personnel() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 sm:mt-0 sm:ml-4 flex flex-wrap items-center gap-2">
+                  <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <select
                         value={person.role === "super_admin" ? "super_admin" : "personnel"}
                         onChange={(e) => handleUpdateRole(person, e.target.value as any)}

@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   description: "Kurumsal Stok Yönetim Sistemi",
   manifest: "/manifest.json",
   icons: {
+    icon: "/icon.png",
     apple: "/icon.png",
   },
 };
