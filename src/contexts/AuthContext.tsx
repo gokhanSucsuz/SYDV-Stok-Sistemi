@@ -11,7 +11,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { AUTHORIZED_EMAIL } from "@/lib/constants";
+import { AUTHORIZED_EMAILS } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 
 export interface Personnel {
@@ -113,8 +113,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     if (!user) throw new Error("Önce Google ile giriş yapmalısınız.");
 
-    const role = user.email === AUTHORIZED_EMAIL ? "super_admin" : "personnel";
-    const status = user.email === AUTHORIZED_EMAIL ? "approved" : "pending";
+    const isSuperAdmin = user.email ? AUTHORIZED_EMAILS.includes(user.email) : false;
+    const role = isSuperAdmin ? "super_admin" : "personnel";
+    const status = isSuperAdmin ? "approved" : "pending";
 
     const res = await fetch("/api/personnel", {
       method: "POST",
