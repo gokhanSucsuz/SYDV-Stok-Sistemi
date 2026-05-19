@@ -102,22 +102,24 @@ export default function Personnel() {
             {pendingPersonnel.map((person) => (
               <li
                 key={person.id}
-                className="px-6 py-5 flex items-center justify-between"
+                className="px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
               >
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                <div className="flex items-start sm:items-center">
+                  <div className="flex-shrink-0 h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center hidden sm:flex">
                     <UserCircle className="h-6 w-6 text-yellow-600" />
                   </div>
-                  <div className="ml-4">
+                  <div className="sm:ml-4 flex flex-col">
                     <div className="text-sm font-semibold text-gray-900">
                       {person.name}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {person.email} • {person.title}
+                    <div className="text-xs text-gray-500 mt-1 flex flex-col sm:flex-row gap-1">
+                      <span>{person.email}</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span>{person.title}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 self-end sm:self-auto">
                   <button
                     onClick={() => handleUpdateStatus(person, "approved")}
                     className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-colors shrink-0"
@@ -161,10 +163,10 @@ export default function Personnel() {
                   className="px-6 py-5 hover:bg-gray-50/80 transition-colors sm:flex sm:items-center sm:justify-between"
                 >
                   <div className="flex items-start sm:items-center">
-                    <div className="flex-shrink-0 h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
+                    <div className="flex-shrink-0 h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center hidden sm:flex">
                       <UserCircle className="h-7 w-7 text-gray-400" />
                     </div>
-                    <div className="ml-4 flex flex-col items-start w-full">
+                    <div className="sm:ml-4 flex flex-col items-start w-full">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold text-gray-900">
                           {person.name}

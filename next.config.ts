@@ -1,11 +1,4 @@
 import type { NextConfig } from "next";
-import withPWA from "@ducanh2912/next-pwa";
-
-const pwa = withPWA({
-  dest: "public",
-  disable: false,
-  register: true,
-});
 
 const nextConfig: NextConfig = {
   turbopack: {},
@@ -19,4 +12,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default pwa(nextConfig);
+export default nextConfig;
