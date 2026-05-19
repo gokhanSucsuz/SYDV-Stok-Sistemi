@@ -52,6 +52,12 @@ export interface MasterItem {
   id?: string;
   name: string;
   measurementUnit: string;
+  itemCode?: string;
+  category?: string;
+  criticalStockLevel?: number;
+  storageConditions?: string;
+  barcode?: string;
+  description?: string;
   createdAt: number;
 }
 

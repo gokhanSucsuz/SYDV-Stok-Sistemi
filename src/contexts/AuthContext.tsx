@@ -51,19 +51,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Try to load personnel from localStorage
+    const savedPersonnel = localStorage.getItem("sydv_personnel");
+    if (savedPersonnel) {
+      try {
+        setPersonnel(JSON.parse(savedPersonnel));
+      } catch (e) {
+        console.error("Local storage parse error", e);
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         if (firebaseUser.email === AUTHORIZED_EMAIL) {
           setUser(firebaseUser);
-          setPersonnel(null);
+          // Don't override personnel with null if we already loaded from localStorage
         } else {
           await signOut(auth);
           setUser(null);
           setPersonnel(null);
+          localStorage.removeItem("sydv_personnel");
         }
       } else {
         setUser(null);
         setPersonnel(null);
+        localStorage.removeItem("sydv_personnel");
       }
       setLoading(false);
     });
@@ -99,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error("Hatalı şifre.");
     }
     setPersonnel(found);
+    localStorage.setItem("sydv_personnel", JSON.stringify(found));
   };
 
   const loginWithEmail = async (email: string, pass: string) => {
@@ -139,13 +152,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const newP = all.find(
         (p) => p.email === user.email && p.name === data.name,
       );
-      if (newP) setPersonnel(newP);
+      if (newP) {
+        setPersonnel(newP);
+        localStorage.setItem("sydv_personnel", JSON.stringify(newP));
+      }
     }
   };
 
   const logout = async () => {
     await signOut(auth);
     setPersonnel(null);
+    localStorage.removeItem("sydv_personnel");
     router.push("/login");
   };
 
