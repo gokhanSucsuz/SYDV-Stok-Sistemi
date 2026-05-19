@@ -44,6 +44,42 @@ export default function MasterItems() {
   const [success, setSuccess] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const [isNewCategory, setIsNewCategory] = useState(false);
+  const [isNewUnit, setIsNewUnit] = useState(false);
+
+  const uniqueCategories = Array.from(
+    new Set(
+      items
+        .map((i) => i.category || "Diğer")
+        .concat([
+          "Gıda",
+          "Temizlik",
+          "Kırtasiye",
+          "Hırdavat",
+          "Tıbbi Malzeme",
+          "Giyim / Tekstil",
+          "Diğer",
+        ]),
+    ),
+  ).sort();
+
+  const uniqueUnits = Array.from(
+    new Set(
+      items
+        .map((i) => i.measurementUnit || "Adet")
+        .concat([
+          "Adet",
+          "Kg",
+          "Litre",
+          "Koli",
+          "Paket",
+          "Porsiyon",
+          "Çuval",
+          "Teneke",
+        ]),
+    ),
+  ).sort();
+
   const loadItems = async () => {
     try {
       const loadedItems = await getMasterItems();
@@ -95,6 +131,8 @@ export default function MasterItems() {
         barcode: "",
         description: "",
       });
+      setIsNewCategory(false);
+      setIsNewUnit(false);
       setSuccess("Malzeme referansı başarıyla eklendi.");
       loadItems();
     } catch (err) {
@@ -333,49 +371,115 @@ export default function MasterItems() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5 flex justify-between items-center">
                     Kategori
+                    {isNewCategory && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsNewCategory(false);
+                          setNewItem({ ...newItem, category: "Diğer" });
+                        }}
+                        className="text-gray-400 hover:text-gray-700 text-[10px] normal-case"
+                      >
+                        Vazgeç
+                      </button>
+                    )}
                   </label>
-                  <select
-                    value={newItem.category}
-                    onChange={(e) =>
-                      setNewItem({ ...newItem, category: e.target.value })
-                    }
-                    className="block w-full rounded-xl border border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-3 transition-colors bg-gray-50/50 hover:bg-white"
-                  >
-                    <option>Gıda</option>
-                    <option>Temizlik</option>
-                    <option>Kırtasiye</option>
-                    <option>Hırdavat</option>
-                    <option>Tıbbi Malzeme</option>
-                    <option>Giyim / Tekstil</option>
-                    <option>Diğer</option>
-                  </select>
+                  {isNewCategory ? (
+                    <input
+                      type="text"
+                      required
+                      value={newItem.category}
+                      onChange={(e) =>
+                        setNewItem({ ...newItem, category: e.target.value })
+                      }
+                      className="block w-full rounded-xl border border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-3 transition-colors bg-gray-50/50 hover:bg-white"
+                      placeholder="Yeni Kategori Adı"
+                      autoFocus
+                    />
+                  ) : (
+                    <select
+                      value={newItem.category}
+                      onChange={(e) => {
+                        if (e.target.value === "YENI") {
+                          setIsNewCategory(true);
+                          setNewItem({ ...newItem, category: "" });
+                        } else {
+                          setNewItem({ ...newItem, category: e.target.value });
+                        }
+                      }}
+                      className="block w-full rounded-xl border border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-3 transition-colors bg-gray-50/50 hover:bg-white"
+                    >
+                      {uniqueCategories.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                      <option value="YENI" className="font-semibold text-gray-900">
+                        + Yeni Kategori Ekle
+                      </option>
+                    </select>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5 flex justify-between items-center">
                     Birim
+                    {isNewUnit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsNewUnit(false);
+                          setNewItem({ ...newItem, measurementUnit: "Adet" });
+                        }}
+                        className="text-gray-400 hover:text-gray-700 text-[10px] normal-case"
+                      >
+                        Vazgeç
+                      </button>
+                    )}
                   </label>
-                  <select
-                    value={newItem.measurementUnit}
-                    onChange={(e) =>
-                      setNewItem({
-                        ...newItem,
-                        measurementUnit: e.target.value,
-                      })
-                    }
-                    className="block w-full rounded-xl border border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-3 transition-colors bg-gray-50/50 hover:bg-white"
-                  >
-                    <option>Adet</option>
-                    <option>Kg</option>
-                    <option>Litre</option>
-                    <option>Koli</option>
-                    <option>Paket</option>
-                    <option>Porsiyon</option>
-                    <option>Çuval</option>
-                    <option>Teneke</option>
-                  </select>
+                  {isNewUnit ? (
+                    <input
+                      type="text"
+                      required
+                      value={newItem.measurementUnit}
+                      onChange={(e) =>
+                        setNewItem({
+                          ...newItem,
+                          measurementUnit: e.target.value,
+                        })
+                      }
+                      className="block w-full rounded-xl border border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-3 transition-colors bg-gray-50/50 hover:bg-white"
+                      placeholder="Yeni Birim (Örn: Kutu)"
+                      autoFocus
+                    />
+                  ) : (
+                    <select
+                      value={newItem.measurementUnit}
+                      onChange={(e) => {
+                        if (e.target.value === "YENI") {
+                          setIsNewUnit(true);
+                          setNewItem({ ...newItem, measurementUnit: "" });
+                        } else {
+                          setNewItem({
+                            ...newItem,
+                            measurementUnit: e.target.value,
+                          });
+                        }
+                      }}
+                      className="block w-full rounded-xl border border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900 sm:text-sm p-3 transition-colors bg-gray-50/50 hover:bg-white"
+                    >
+                      {uniqueUnits.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                      <option value="YENI" className="font-semibold text-gray-900">
+                        + Yeni Birim Ekle
+                      </option>
+                    </select>
+                  )}
                 </div>
 
                 <div>

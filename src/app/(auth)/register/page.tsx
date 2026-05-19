@@ -81,158 +81,192 @@ export default function Register() {
   if (!user) return null; // Prevent flicker while redirecting to login
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-red-100/40 blur-3xl" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-blue-100/40 blur-3xl" />
-      </div>
-
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-        <div className="flex justify-center mb-6">
-          <div className="p-3 bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
+    <div className="min-h-screen flex bg-white">
+      {/* Left side - Visual/Brand */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-zinc-950 text-white p-12 relative overflow-hidden">
+        {/* Background Gradients & Image */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-900/30 to-zinc-950 pointer-events-none z-0" />
+        <img 
+          src="https://images.unsplash.com/photo-1586528116311-ad8c738759be?q=80&w=2670&auto=format&fit=crop" 
+          alt="Warehouse" 
+          className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none"
+        />
+        
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="p-2 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10">
             <img
-              className="h-20 w-20 rounded-2xl object-cover"
+              className="h-10 w-10 rounded-xl object-cover"
               src={APP_LOGO_URL}
               alt="Logo"
             />
           </div>
+          <span className="font-display font-semibold tracking-tight text-xl text-white/90">
+            {APP_NAME}
+          </span>
         </div>
-        <h2 className="mt-2 text-center text-3xl font-display font-bold tracking-tight text-gray-900">
-          Yeni Personel Kaydı
-        </h2>
-        <p className="mt-2 text-center text-sm font-medium text-gray-600 max-w-sm mx-auto">
-          Güvenli erişim için Google hesabınız doğrulandı. Lütfen profilinizi oluşturun.
-        </p>
+
+        <div className="relative z-10 max-w-lg mb-12">
+          <h1 className="text-4xl md:text-5xl font-display font-bold leading-[1.1] mb-6 tracking-tight text-white/95">
+            Yetkili Personel <br /> Kayıt Sistemi
+          </h1>
+          <p className="text-lg text-zinc-400 font-medium leading-relaxed">
+            Kurumsal kimliğinizi ve güvenlik bilgilerinizi tamamlayarak depo ve ihale takip sistemine erişim talep edin.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
-        <div className="bg-white/80 backdrop-blur-xl py-10 px-8 lg:px-10 shadow-2xl shadow-gray-200/50 sm:rounded-[2rem] border border-white/50">
+      {/* Right side - Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-16 xl:px-24 bg-white relative overflow-y-auto py-12 lg:py-0">
+        <div className="w-full max-w-md mx-auto">
+          
+          <div className="lg:hidden flex items-center gap-3 mb-10">
+             <div className="p-1.5 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm">
+                <img
+                  className="h-12 w-12 rounded-xl object-cover"
+                  src={APP_LOGO_URL}
+                  alt="Logo"
+                />
+             </div>
+             <div>
+               <h2 className="text-xl font-display font-bold tracking-tight text-gray-900">{APP_NAME}</h2>
+               <p className="text-xs text-gray-500 font-medium">{APP_SUBTITLE}</p>
+             </div>
+          </div>
+
+          <div className="mb-10 text-left">
+            <h2 className="text-3xl font-display font-semibold tracking-tight text-gray-900 mb-2">
+              Profil Bilgileriniz
+            </h2>
+            <p className="text-gray-500 font-medium text-sm">
+              Devam etmek için aşağıdaki alanları eksiksiz bir şekilde doldurun.
+            </p>
+          </div>
+
           {error && (
-            <div className="mb-8 bg-red-50 border border-red-100 p-4 rounded-2xl text-red-700 text-sm flex items-center relative">
-              <div className="mr-3 p-1.5 bg-red-100 rounded-lg text-red-600 shrink-0">
+            <div className="mb-8 bg-red-50 border border-red-100 p-4 rounded-2xl text-red-700 text-sm flex items-start shadow-sm relative">
+              <div className="mr-3 mt-0.5 text-red-600 shrink-0">
                 <ShieldCheck className="w-5 h-5" />
               </div>
-              <span className="font-semibold px-2">{error}</span>
+              <span className="font-semibold leading-relaxed">{error}</span>
             </div>
           )}
 
           <form className="space-y-6" onSubmit={handleRegisterSubmit}>
             <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ad Soyad
-                </label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 sm:text-sm bg-white/50 backdrop-blur-sm transition-all"
-                    placeholder="Tam Adınız"
-                    />
-                </div>
-                </div>
-
-                <div className="sm:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Unvan
-                </label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Briefcase className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) =>
-                        setFormData({ ...formData, title: e.target.value })
-                    }
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 sm:text-sm bg-white/50 backdrop-blur-sm transition-all"
-                    placeholder="Örn: Sosyal Yardım İnceleme Görevlisi"
-                    />
-                </div>
+                <div className="sm:col-span-2 space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-900">
+                      Ad Soyad
+                  </label>
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <User className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) =>
+                            setFormData({ ...formData, name: e.target.value })
+                        }
+                        className="block w-full pl-11 pr-3 py-3.5 text-gray-900 text-sm font-medium border border-gray-200 rounded-2xl shadow-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        placeholder="Tam Adınız"
+                      />
+                  </div>
                 </div>
 
-                <div className="sm:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    TC Kimlik No
-                </label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CreditCard className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                    type="text"
-                    required
-                    maxLength={11}
-                    value={formData.tcNo}
-                    onChange={(e) =>
-                        setFormData({
-                        ...formData,
-                        tcNo: e.target.value.replace(/\D/g, ""),
-                        })
-                    }
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 sm:text-sm bg-white/50 backdrop-blur-sm transition-all"
-                    placeholder="11 Haneli TC No"
-                    />
-                </div>
+                <div className="sm:col-span-1 space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-900">
+                      Unvan
+                  </label>
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <Briefcase className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={formData.title}
+                        onChange={(e) =>
+                            setFormData({ ...formData, title: e.target.value })
+                        }
+                        className="block w-full pl-11 pr-3 py-3.5 text-gray-900 text-sm font-medium border border-gray-200 rounded-2xl shadow-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        placeholder="Örn: Memur"
+                      />
+                  </div>
                 </div>
 
-                <div className="sm:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sistem Şifresi
-                </label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 sm:text-sm bg-white/50 backdrop-blur-sm transition-all"
-                    placeholder="••••••••"
-                    />
-                </div>
+                <div className="sm:col-span-1 space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-900">
+                      TC Kimlik No
+                  </label>
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <CreditCard className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        maxLength={11}
+                        value={formData.tcNo}
+                        onChange={(e) =>
+                            setFormData({
+                            ...formData,
+                            tcNo: e.target.value.replace(/\D/g, ""),
+                            })
+                        }
+                        className="block w-full pl-11 pr-3 py-3.5 text-gray-900 text-sm font-medium border border-gray-200 rounded-2xl shadow-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all tracking-widest font-mono"
+                        placeholder="11 Haneli TC"
+                      />
+                  </div>
                 </div>
 
-                <div className="sm:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Şifre Tekrar
-                </label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                    type="password"
-                    required
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                        setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                        })
-                    }
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 sm:text-sm bg-white/50 backdrop-blur-sm transition-all"
-                    placeholder="••••••••"
-                    />
+                <div className="sm:col-span-1 space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-900">
+                      Sistem Şifresi
+                  </label>
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        value={formData.password}
+                        onChange={(e) =>
+                            setFormData({ ...formData, password: e.target.value })
+                        }
+                        className="block w-full pl-11 pr-3 py-3.5 text-gray-900 text-sm font-medium border border-gray-200 rounded-2xl shadow-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        placeholder="••••••••"
+                      />
+                  </div>
                 </div>
+
+                <div className="sm:col-span-1 space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-900">
+                      Şifre Tekrar
+                  </label>
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                            setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                            })
+                        }
+                        className="block w-full pl-11 pr-3 py-3.5 text-gray-900 text-sm font-medium border border-gray-200 rounded-2xl shadow-sm bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        placeholder="••••••••"
+                      />
+                  </div>
                 </div>
             </div>
 
-            <div className="flex items-start bg-gray-50/80 p-4 rounded-xl border border-gray-100">
+            <div className="flex items-start bg-gray-50/60 p-4 rounded-2xl border border-gray-100">
               <div className="flex items-center h-5 mt-0.5">
                 <input
                   id="kvkk"
@@ -248,7 +282,7 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); setShowKVKK(true); }}
-                    className="text-red-600 hover:text-red-500 underline underline-offset-2"
+                    className="text-red-600 hover:text-red-500 underline underline-offset-2 font-semibold"
                   >
                     KVKK Aydınlatma Metni
                   </button>
@@ -257,21 +291,21 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="pt-4 flex flex-col sm:flex-row-reverse gap-4">
+            <div className="pt-2 flex flex-col sm:flex-row-reverse gap-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full sm:w-2/3 flex justify-center items-center py-3.5 px-4 border border-transparent rounded-2xl shadow-sm text-sm font-semibold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all disabled:opacity-50"
+                className="w-full sm:w-2/3 flex justify-center items-center py-4 px-4 rounded-2xl shadow-sm text-sm font-bold text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all disabled:opacity-50"
               >
-                <UserPlus className="w-5 h-5 mr-2" />
-                Kaydı Tamamla ve Onaya Gönder
+                <UserPlus className="w-4 h-4 mr-2" />
+                Kaydı Tamamla
               </button>
               <Link
                 href="/login"
-                className="w-full sm:w-1/3 flex justify-center items-center py-3.5 px-4 border border-gray-200 rounded-2xl shadow-sm text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-all"
+                className="w-full sm:w-1/3 flex justify-center items-center py-4 px-4 border border-gray-200 rounded-2xl shadow-sm text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-all"
               >
-                <ArrowLeft className="w-5 h-5 mr-2 text-gray-400" />
-                Geri Dön
+                <ArrowLeft className="w-4 h-4 mr-2 text-gray-400" />
+                Dön
               </Link>
             </div>
           </form>
