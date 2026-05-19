@@ -31,6 +31,7 @@ import {
   ChevronDown,
   Calendar,
   Database,
+  History,
 } from "lucide-react";
 import { format } from "date-fns";
 import { APP_LOGO_URL } from "@/lib/constants";
@@ -73,6 +74,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [masterItems, setMasterItems] = useState<MasterItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"stock" | "history">("stock");
 
   // New Item Form
   const [newItemName, setNewItemName] = useState("");
@@ -1123,540 +1125,578 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="flex space-x-2 border-b border-gray-100 mb-6 px-2 overflow-x-auto hidden-scrollbar">
+        <button
+          onClick={() => setActiveTab("stock")}
+          className={cn(
+            "pb-4 px-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors",
+            activeTab === "stock"
+              ? "border-red-600 text-red-600"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
+          )}
+        >
+          <div className="flex items-center">
+            <PackageOpen className="w-4 h-4 mr-2" />
+            Stok ve İhale Yönetimi
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={cn(
+            "pb-4 px-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors",
+            activeTab === "history"
+              ? "border-red-600 text-red-600"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
+          )}
+        >
+          <div className="flex items-center">
+            <History className="w-4 h-4 mr-2" />
+            İşlem Geçmişi
+          </div>
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0">
         {/* Stok Durumu ve Yeni Kalem Ekleme */}
-        <div className="space-y-8">
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100/50">
-            <h3 className="font-semibold text-gray-900 mb-6 flex items-center gap-2">
-              <PackageOpen className="w-5 h-5 text-gray-400" /> Hızlı İşlemler
-            </h3>
+        {activeTab === "stock" && (
+          <div className="grid grid-cols-1 gap-8 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100/50">
+              <h3 className="font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                <PackageOpen className="w-5 h-5 text-gray-400" /> Hızlı İşlemler
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <button
-                type="button"
-                onClick={() => setShowTenderModal(true)}
-                className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-red-300 rounded-xl text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 transition-all shadow-sm"
-              >
-                <Plus className="w-6 h-6 mb-1" />
-                İhale / Bağış Tanımla
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setShowTenderModal(true)}
+                  className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-red-300 rounded-xl text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 transition-all shadow-sm"
+                >
+                  <Plus className="w-6 h-6 mb-1" />
+                  İhale / Bağış Tanımla
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setShowBulkEntryModal(true)}
-                className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-green-300 rounded-xl text-sm font-semibold text-green-700 bg-green-50 hover:bg-green-100 transition-all shadow-sm"
-              >
-                <ArrowDownRight className="w-6 h-6 mb-1" />
-                Toplu Stok Girişi
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkEntryModal(true)}
+                  className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-green-300 rounded-xl text-sm font-semibold text-green-700 bg-green-50 hover:bg-green-100 transition-all shadow-sm"
+                >
+                  <ArrowDownRight className="w-6 h-6 mb-1" />
+                  Toplu Stok Girişi
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setShowBulkExitModal(true)}
-                className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-gray-300 rounded-xl text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 transition-all shadow-sm"
-              >
-                <ArrowUpRight className="w-6 h-6 mb-1" />
-                Toplu Stok Çıkışı
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkExitModal(true)}
+                  className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-gray-300 rounded-xl text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 transition-all shadow-sm"
+                >
+                  <ArrowUpRight className="w-6 h-6 mb-1" />
+                  Toplu Stok Çıkışı
+                </button>
+              </div>
 
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <AlertCircle className="h-5 w-5 text-blue-400" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-blue-700">
-                    Sistem artık sadece toplu giriş ve çıkış işlemlerini
-                    desteklemektedir. Tekli ürün eklemek yerine yukarıdaki
-                    panelleri kullanın.
-                  </p>
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-700">
+                      Sistem artık sadece toplu giriş ve çıkış işlemlerini
+                      desteklemektedir. Tekli ürün eklemek yerine yukarıdaki
+                      panelleri kullanın.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100/50">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <Database className="w-5 h-5 text-gray-400" /> Mevcut Stok
-                Durumu
-              </h3>
-            </div>
-            <div className="max-h-96 overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50/80 sticky top-0 backdrop-blur-sm z-10">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Malzeme
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Kullanılan / Mevcut
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      İhale Limit Bilgisi
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      İşlem
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {groupedList.filter((g) => g.totalStock > 0).length === 0 ? (
+            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100/50">
+              <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <Database className="w-5 h-5 text-gray-400" /> Mevcut Stok
+                  Durumu
+                </h3>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50/80 sticky top-0 backdrop-blur-sm z-10">
                     <tr>
-                      <td
-                        colSpan={4}
-                        className="px-6 py-4 text-center text-sm text-gray-500"
-                      >
-                        Mevcut stokta malzeme bulunmuyor.
-                      </td>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Malzeme
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Kullanılan / Mevcut
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        İhale Limit Bilgisi
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        İşlem
+                      </th>
                     </tr>
-                  ) : (
-                    groupedList
-                      .filter((g) => g.totalStock > 0)
-                      .map((group) => {
-                        const isLowStock =
-                          group.totalStock <
-                          (group.totalLimit
-                            ? Math.max(group.totalLimit * 0.1, 2)
-                            : 2);
-                        const mainItem = group.tenders[0]; // Use first item for general info
-                        const usedLimit = group.totalReceived;
-                        const remainingLimit =
-                          group.totalLimit - group.totalReceived;
-
-                        return (
-                          <tr key={group.name}>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                              <div className="flex items-center">
-                                {group.name}
-                                {isLowStock && (
-                                  <span title="Düşük Stok">
-                                    <AlertTriangle className="w-4 h-4 text-yellow-500 ml-2" />
-                                  </span>
-                                )}
-                              </div>
-                              <div className="mt-1 space-y-1">
-                                {group.tenders
-                                  .filter((t) => t.currentStock > 0)
-                                  .map((t, idx) => (
-                                    <div
-                                      key={t.id}
-                                      className={`text-[10px] p-1.5 rounded-lg border ${idx === 0 ? "bg-blue-50 border-blue-200 text-blue-700 font-bold" : "bg-gray-50 border-gray-100 text-gray-600"} cursor-pointer hover:shadow-sm flex items-center justify-between transition-colors`}
-                                      onClick={() => setHistoryItem(t)}
-                                      title={
-                                        idx === 0
-                                          ? "FIFO: İlk kullanılacak stok budur."
-                                          : "Bu stoktan önce eski ihaleler kullanılmalıdır."
-                                      }
-                                    >
-                                      <span>
-                                        {t.tenderType === "Bağış"
-                                          ? "Bağış"
-                                          : "İhale"}
-                                        : {t.tenderName}
-                                        {t.tenderEndDate &&
-                                          ` (${format(t.tenderEndDate, "dd.MM.yyyy")})`}
-                                      </span>
-                                      <span className="ml-2 font-mono">
-                                        [{t.currentStock} {t.measurementUnit}]
-                                      </span>
-                                    </div>
-                                  ))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <div className="flex flex-col">
-                                <div className="flex items-center">
-                                  <span
-                                    className={`font-bold ${isLowStock ? "text-yellow-600" : "text-green-600"}`}
-                                  >
-                                    {group.totalStock}
-                                  </span>
-                                  <span className="ml-1 text-xs">
-                                    {group.measurementUnit} (Mevcut)
-                                  </span>
-                                </div>
-                                <div className="flex items-center text-xs text-red-500 mt-1">
-                                  <span className="font-medium">
-                                    {(
-                                      group.totalReceived - group.totalStock
-                                    ).toFixed(2)}
-                                  </span>
-                                  <span className="ml-1">
-                                    {group.measurementUnit} (Harcanan)
-                                  </span>
-                                </div>
-                              </div>
-                              {isLowStock && (
-                                <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-800">
-                                  Kritik Seviye
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-[10px]">
-                                  <span>Toplam Limit:</span>
-                                  <span className="font-bold">
-                                    {group.totalLimit}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between text-[10px] text-red-600">
-                                  <span>Kullanılan Limit:</span>
-                                  <span className="font-bold">
-                                    {usedLimit.toFixed(2)}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between text-[10px] text-green-600">
-                                  <span>Kullanılabilir Limit:</span>
-                                  <span className="font-bold">
-                                    {remainingLimit.toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex justify-end space-x-2">
-                                <button
-                                  onClick={() => {
-                                    const related = items.filter(
-                                      (i) => i.name === group.name,
-                                    );
-                                    generateItemReport(
-                                      mainItem,
-                                      related,
-                                      transactions,
-                                      personnel,
-                                      "all",
-                                    );
-                                  }}
-                                  className="text-blue-600 hover:text-blue-900 flex items-center"
-                                  title="PDF Rapor Al"
-                                >
-                                  <FileText className="w-4 h-4 mr-1" /> Rapor
-                                </button>
-                                <div className="relative group/edit">
-                                  <button className="text-indigo-600 hover:text-indigo-900 p-1">
-                                    <Edit2 className="w-4 h-4" />
-                                  </button>
-                                  <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden group-hover/edit:block border border-gray-200">
-                                    <div className="px-3 py-1 text-xs font-bold text-gray-500 border-b">
-                                      Düzenlenecek İhale Seçin:
-                                    </div>
-                                    {group.tenders.map((t) => (
-                                      <button
-                                        key={t.id}
-                                        onClick={() => setEditingItem(t)}
-                                        className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
-                                      >
-                                        {t.tenderName} ({t.currentStock})
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Süresi Dolan İhaleler Bölümü */}
-          <div className="bg-white shadow sm:rounded-lg overflow-hidden">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200 bg-orange-50">
-              <h3 className="text-lg font-medium text-orange-800 flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
-                Süresi Dolan İhaleler
-              </h3>
-            </div>
-            <div className="max-h-64 overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      İhale Adı
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Bitiş Tarihi
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Kalan Ürünler
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      İşlem
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {items.filter(
-                    (i) => i.tenderEndDate && i.tenderEndDate < Date.now(),
-                  ).length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-6 py-4 text-center text-sm text-gray-500"
-                      >
-                        Süresi dolan ihale bulunmuyor.
-                      </td>
-                    </tr>
-                  ) : (
-                    // Group by tenderId
-                    Object.values(
-                      items
-                        .filter(
-                          (i) =>
-                            i.tenderEndDate && i.tenderEndDate < Date.now(),
-                        )
-                        .reduce(
-                          (acc, item) => {
-                            const key =
-                              item.tenderId || item.tenderName || "unknown";
-                            if (!acc[key]) {
-                              acc[key] = {
-                                tenderName: item.tenderName,
-                                endDate: item.tenderEndDate,
-                                items: [],
-                              };
-                            }
-                            acc[key].items.push(item);
-                            return acc;
-                          },
-                          {} as Record<
-                            string,
-                            {
-                              tenderName?: string;
-                              endDate?: number;
-                              items: Item[];
-                            }
-                          >,
-                        ),
-                    ).map((tender: any, idx) => (
-                      <tr key={idx} className="bg-orange-50/20">
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {tender.tenderName}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-red-600 font-bold">
-                          {tender.endDate
-                            ? format(tender.endDate, "dd.MM.yyyy")
-                            : "-"}
-                        </td>
-                        <td className="px-6 py-4 text-xs text-gray-500">
-                          {
-                            tender.items.filter((i: Item) => i.currentStock > 0)
-                              .length
-                          }{" "}
-                          Kalem Stoklu Ürün
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() =>
-                              generateTenderReport(
-                                tender.tenderName || "",
-                                unit,
-                                tender.items,
-                                items,
-                                transactions,
-                                personnel,
-                                currentPersonnel,
-                              )
-                            }
-                            className="text-blue-600 hover:text-blue-900 flex items-center justify-end w-full"
-                          >
-                            <FileText className="w-4 h-4 mr-1" /> Rapor
-                          </button>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {groupedList.filter((g) => g.totalStock > 0).length ===
+                    0 ? (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-6 py-4 text-center text-sm text-gray-500"
+                        >
+                          Mevcut stokta malzeme bulunmuyor.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                    ) : (
+                      groupedList
+                        .filter((g) => g.totalStock > 0)
+                        .map((group) => {
+                          const isLowStock =
+                            group.totalStock <
+                            (group.totalLimit
+                              ? Math.max(group.totalLimit * 0.1, 2)
+                              : 2);
+                          const mainItem = group.tenders[0]; // Use first item for general info
+                          const usedLimit = group.totalReceived;
+                          const remainingLimit =
+                            group.totalLimit - group.totalReceived;
 
-          {/* Biten Stoklar Bölümü */}
-          <div className="bg-white shadow sm:rounded-lg overflow-hidden">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200 bg-red-50">
-              <h3 className="text-lg font-medium text-red-800 flex items-center">
-                <AlertCircle className="w-5 h-5 mr-2" />
-                Biten Stoklar
-              </h3>
-            </div>
-            <div className="max-h-64 overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Malzeme
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      İşlem
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {groupedList.filter((g) => g.totalStock <= 0).length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={2}
-                        className="px-6 py-4 text-center text-sm text-gray-500"
-                      >
-                        Biten stok bulunmuyor.
-                      </td>
-                    </tr>
-                  ) : (
-                    groupedList
-                      .filter((g) => g.totalStock <= 0)
-                      .map((group) => {
-                        const mainItem = group.tenders[0];
-                        return (
-                          <tr key={group.name} className="bg-red-50/30">
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                              <div className="flex items-center">
-                                {group.name}
-                                <span title="Stok Bitti">
-                                  <AlertCircle className="w-4 h-4 text-red-600 ml-2" />
-                                </span>
-                              </div>
-                              <div className="mt-1 space-y-1">
-                                {group.tenders.map((t) => (
-                                  <div
-                                    key={t.id}
-                                    className="text-[10px] text-gray-500"
-                                  >
-                                    {t.tenderType === "Bağış"
-                                      ? "Bağış"
-                                      : "İhale"}
-                                    : {t.tenderName}
-                                  </div>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex justify-end space-x-2">
-                                <button
-                                  onClick={() => {
-                                    const related = items.filter(
-                                      (i) => i.name === group.name,
-                                    );
-                                    generateItemReport(
-                                      mainItem,
-                                      related,
-                                      transactions,
-                                      personnel,
-                                      "all",
-                                    );
-                                  }}
-                                  className="text-blue-600 hover:text-blue-900 flex items-center"
-                                  title="PDF Rapor Al"
-                                >
-                                  <FileText className="w-4 h-4 mr-1" /> Rapor
-                                </button>
-                                <div className="relative group/edit">
-                                  <button className="text-indigo-600 hover:text-indigo-900 p-1">
-                                    <Edit2 className="w-4 h-4" />
-                                  </button>
-                                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover/edit:block border border-gray-200">
-                                    <div className="px-3 py-1 text-xs font-bold text-gray-500 border-b">
-                                      Düzenlenecek İhale Seçin:
-                                    </div>
-                                    {group.tenders.map((t) => (
-                                      <button
+                          return (
+                            <tr key={group.name}>
+                              <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                <div className="flex items-center">
+                                  {group.name}
+                                  {isLowStock && (
+                                    <span title="Düşük Stok">
+                                      <AlertTriangle className="w-4 h-4 text-yellow-500 ml-2" />
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-1 space-y-1">
+                                  {group.tenders
+                                    .filter((t) => t.currentStock > 0)
+                                    .map((t, idx) => (
+                                      <div
                                         key={t.id}
-                                        onClick={() => setEditingItem(t)}
-                                        className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                        className={`text-[10px] p-1.5 rounded-lg border ${idx === 0 ? "bg-blue-50 border-blue-200 text-blue-700 font-bold" : "bg-gray-50 border-gray-100 text-gray-600"} cursor-pointer hover:shadow-sm flex items-center justify-between transition-colors`}
+                                        onClick={() => setHistoryItem(t)}
+                                        title={
+                                          idx === 0
+                                            ? "FIFO: İlk kullanılacak stok budur."
+                                            : "Bu stoktan önce eski ihaleler kullanılmalıdır."
+                                        }
                                       >
-                                        {t.tenderName}
-                                      </button>
+                                        <span>
+                                          {t.tenderType === "Bağış"
+                                            ? "Bağış"
+                                            : "İhale"}
+                                          : {t.tenderName}
+                                          {t.tenderEndDate &&
+                                            ` (${format(t.tenderEndDate, "dd.MM.yyyy")})`}
+                                        </span>
+                                        <span className="ml-2 font-mono">
+                                          [{t.currentStock} {t.measurementUnit}]
+                                        </span>
+                                      </div>
                                     ))}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div className="flex flex-col">
+                                  <div className="flex items-center">
+                                    <span
+                                      className={`font-bold ${isLowStock ? "text-yellow-600" : "text-green-600"}`}
+                                    >
+                                      {group.totalStock}
+                                    </span>
+                                    <span className="ml-1 text-xs">
+                                      {group.measurementUnit} (Mevcut)
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center text-xs text-red-500 mt-1">
+                                    <span className="font-medium">
+                                      {(
+                                        group.totalReceived - group.totalStock
+                                      ).toFixed(2)}
+                                    </span>
+                                    <span className="ml-1">
+                                      {group.measurementUnit} (Harcanan)
+                                    </span>
                                   </div>
                                 </div>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                  )}
-                </tbody>
-              </table>
+                                {isLowStock && (
+                                  <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-800">
+                                    Kritik Seviye
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-[10px]">
+                                    <span>Toplam Limit:</span>
+                                    <span className="font-bold">
+                                      {group.totalLimit}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-[10px] text-red-600">
+                                    <span>Kullanılan Limit:</span>
+                                    <span className="font-bold">
+                                      {usedLimit.toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-[10px] text-green-600">
+                                    <span>Kullanılabilir Limit:</span>
+                                    <span className="font-bold">
+                                      {remainingLimit.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div className="flex justify-end space-x-2">
+                                  <button
+                                    onClick={() => {
+                                      const related = items.filter(
+                                        (i) => i.name === group.name,
+                                      );
+                                      generateItemReport(
+                                        mainItem,
+                                        related,
+                                        transactions,
+                                        personnel,
+                                        "all",
+                                      );
+                                    }}
+                                    className="text-blue-600 hover:text-blue-900 flex items-center"
+                                    title="PDF Rapor Al"
+                                  >
+                                    <FileText className="w-4 h-4 mr-1" /> Rapor
+                                  </button>
+                                  <div className="relative group/edit">
+                                    <button className="text-indigo-600 hover:text-indigo-900 p-1">
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden group-hover/edit:block border border-gray-200">
+                                      <div className="px-3 py-1 text-xs font-bold text-gray-500 border-b">
+                                        Düzenlenecek İhale Seçin:
+                                      </div>
+                                      {group.tenders.map((t) => (
+                                        <button
+                                          key={t.id}
+                                          onClick={() => setEditingItem(t)}
+                                          className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                        >
+                                          {t.tenderName} ({t.currentStock})
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Süresi Dolan İhaleler Bölümü */}
+            <div className="bg-white shadow sm:rounded-lg overflow-hidden">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200 bg-orange-50">
+                <h3 className="text-lg font-medium text-orange-800 flex items-center">
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Süresi Dolan İhaleler
+                </h3>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        İhale Adı
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Bitiş Tarihi
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Kalan Ürünler
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        İşlem
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {items.filter(
+                      (i) => i.tenderEndDate && i.tenderEndDate < Date.now(),
+                    ).length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-6 py-4 text-center text-sm text-gray-500"
+                        >
+                          Süresi dolan ihale bulunmuyor.
+                        </td>
+                      </tr>
+                    ) : (
+                      // Group by tenderId
+                      Object.values(
+                        items
+                          .filter(
+                            (i) =>
+                              i.tenderEndDate && i.tenderEndDate < Date.now(),
+                          )
+                          .reduce(
+                            (acc, item) => {
+                              const key =
+                                item.tenderId || item.tenderName || "unknown";
+                              if (!acc[key]) {
+                                acc[key] = {
+                                  tenderName: item.tenderName,
+                                  endDate: item.tenderEndDate,
+                                  items: [],
+                                };
+                              }
+                              acc[key].items.push(item);
+                              return acc;
+                            },
+                            {} as Record<
+                              string,
+                              {
+                                tenderName?: string;
+                                endDate?: number;
+                                items: Item[];
+                              }
+                            >,
+                          ),
+                      ).map((tender: any, idx) => (
+                        <tr key={idx} className="bg-orange-50/20">
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                            {tender.tenderName}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-red-600 font-bold">
+                            {tender.endDate
+                              ? format(tender.endDate, "dd.MM.yyyy")
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-gray-500">
+                            {
+                              tender.items.filter(
+                                (i: Item) => i.currentStock > 0,
+                              ).length
+                            }{" "}
+                            Kalem Stoklu Ürün
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() =>
+                                generateTenderReport(
+                                  tender.tenderName || "",
+                                  unit,
+                                  tender.items,
+                                  items,
+                                  transactions,
+                                  personnel,
+                                  currentPersonnel,
+                                )
+                              }
+                              className="text-blue-600 hover:text-blue-900 flex items-center justify-end w-full"
+                            >
+                              <FileText className="w-4 h-4 mr-1" /> Rapor
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Biten Stoklar Bölümü */}
+            <div className="bg-white shadow sm:rounded-lg overflow-hidden">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200 bg-red-50">
+                <h3 className="text-lg font-medium text-red-800 flex items-center">
+                  <AlertCircle className="w-5 h-5 mr-2" />
+                  Biten Stoklar
+                </h3>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Malzeme
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        İşlem
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {groupedList.filter((g) => g.totalStock <= 0).length ===
+                    0 ? (
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="px-6 py-4 text-center text-sm text-gray-500"
+                        >
+                          Biten stok bulunmuyor.
+                        </td>
+                      </tr>
+                    ) : (
+                      groupedList
+                        .filter((g) => g.totalStock <= 0)
+                        .map((group) => {
+                          const mainItem = group.tenders[0];
+                          return (
+                            <tr key={group.name} className="bg-red-50/30">
+                              <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                <div className="flex items-center">
+                                  {group.name}
+                                  <span title="Stok Bitti">
+                                    <AlertCircle className="w-4 h-4 text-red-600 ml-2" />
+                                  </span>
+                                </div>
+                                <div className="mt-1 space-y-1">
+                                  {group.tenders.map((t) => (
+                                    <div
+                                      key={t.id}
+                                      className="text-[10px] text-gray-500"
+                                    >
+                                      {t.tenderType === "Bağış"
+                                        ? "Bağış"
+                                        : "İhale"}
+                                      : {t.tenderName}
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div className="flex justify-end space-x-2">
+                                  <button
+                                    onClick={() => {
+                                      const related = items.filter(
+                                        (i) => i.name === group.name,
+                                      );
+                                      generateItemReport(
+                                        mainItem,
+                                        related,
+                                        transactions,
+                                        personnel,
+                                        "all",
+                                      );
+                                    }}
+                                    className="text-blue-600 hover:text-blue-900 flex items-center"
+                                    title="PDF Rapor Al"
+                                  >
+                                    <FileText className="w-4 h-4 mr-1" /> Rapor
+                                  </button>
+                                  <div className="relative group/edit">
+                                    <button className="text-indigo-600 hover:text-indigo-900 p-1">
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover/edit:block border border-gray-200">
+                                      <div className="px-3 py-1 text-xs font-bold text-gray-500 border-b">
+                                        Düzenlenecek İhale Seçin:
+                                      </div>
+                                      {group.tenders.map((t) => (
+                                        <button
+                                          key={t.id}
+                                          onClick={() => setEditingItem(t)}
+                                          className="block w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100"
+                                        >
+                                          {t.tenderName}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* İşlem Geçmişi */}
-        <div className="space-y-6">
-          <div className="bg-white shadow sm:rounded-lg overflow-hidden">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">
-                Son İşlemler
-              </h3>
-            </div>
-            <div className="max-h-96 overflow-y-auto">
-              <ul className="divide-y divide-gray-200">
-                {transactions.length === 0 ? (
-                  <li className="px-4 py-4 text-center text-sm text-gray-500">
-                    Kayıtlı işlem bulunmuyor.
-                  </li>
-                ) : (
-                  transactions.slice(0, 50).map((tx) => (
-                    <li
-                      key={tx.id}
-                      className="px-4 py-4 sm:px-6 hover:bg-gray-50"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          {tx.type === "GİRİŞ" ? (
-                            <ArrowDownRight className="h-5 w-5 text-green-500 mr-2" />
-                          ) : (
-                            <ArrowUpRight className="h-5 w-5 text-red-500 mr-2" />
-                          )}
-                          <p className="text-sm font-medium text-gray-900">
-                            {itemMap[tx.itemId]?.name || "Bilinmeyen Malzeme"}
-                          </p>
+        {activeTab === "history" && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="bg-white shadow sm:rounded-lg overflow-hidden">
+              <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Son İşlemler
+                </h3>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                <ul className="divide-y divide-gray-200">
+                  {transactions.length === 0 ? (
+                    <li className="px-4 py-4 text-center text-sm text-gray-500">
+                      Kayıtlı işlem bulunmuyor.
+                    </li>
+                  ) : (
+                    transactions.slice(0, 50).map((tx) => (
+                      <li
+                        key={tx.id}
+                        className="px-4 py-4 sm:px-6 hover:bg-gray-50"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            {tx.type === "GİRİŞ" ? (
+                              <ArrowDownRight className="h-5 w-5 text-green-500 mr-2" />
+                            ) : (
+                              <ArrowUpRight className="h-5 w-5 text-red-500 mr-2" />
+                            )}
+                            <p className="text-sm font-medium text-gray-900">
+                              {itemMap[tx.itemId]?.name || "Bilinmeyen Malzeme"}
+                            </p>
+                          </div>
+                          <div className="ml-2 flex-shrink-0 flex">
+                            <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                              {format(tx.date, "dd.MM.yyyy HH:mm")}
+                            </p>
+                          </div>
                         </div>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            {format(tx.date, "dd.MM.yyyy HH:mm")}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex text-sm text-gray-500">
-                          <p>
-                            Miktar:{" "}
-                            <span className="font-medium text-gray-900">
-                              {tx.quantity}{" "}
-                              {itemMap[tx.itemId]?.measurementUnit}
-                            </span>
-                          </p>
-                          {tx.remainingStock !== undefined && (
-                            <p className="mt-2 sm:mt-0 sm:ml-6">
-                              Kalan Stok:{" "}
+                        <div className="mt-2 sm:flex sm:justify-between">
+                          <div className="sm:flex text-sm text-gray-500">
+                            <p>
+                              Miktar:{" "}
                               <span className="font-medium text-gray-900">
-                                {tx.remainingStock}{" "}
+                                {tx.quantity}{" "}
                                 {itemMap[tx.itemId]?.measurementUnit}
                               </span>
                             </p>
-                          )}
-                          <p className="mt-2 sm:mt-0 sm:ml-6">
-                            Personel: {personnelMap[tx.personnelId] || "-"}
-                          </p>
+                            {tx.remainingStock !== undefined && (
+                              <p className="mt-2 sm:mt-0 sm:ml-6">
+                                Kalan Stok:{" "}
+                                <span className="font-medium text-gray-900">
+                                  {tx.remainingStock}{" "}
+                                  {itemMap[tx.itemId]?.measurementUnit}
+                                </span>
+                              </p>
+                            )}
+                            <p className="mt-2 sm:mt-0 sm:ml-6">
+                              Personel: {personnelMap[tx.personnelId] || "-"}
+                            </p>
+                          </div>
+                          <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                            <p>Evrak: {tx.documentNo}</p>
+                          </div>
                         </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>Evrak: {tx.documentNo}</p>
-                        </div>
-                      </div>
-                    </li>
-                  ))
-                )}
-              </ul>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Edit Modal */}
