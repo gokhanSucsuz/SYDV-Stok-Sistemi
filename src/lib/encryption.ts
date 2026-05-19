@@ -29,11 +29,26 @@ export function encryptDeterm(data: string | undefined): string | undefined {
 
 export function decryptDeterm(ciphertext: string | undefined): string | undefined {
   if (ciphertext === undefined || ciphertext === null) return ciphertext;
+  
+  // Try to decrypt with deterministic key first
   try {
     const bytes = CryptoJS.AES.decrypt(String(ciphertext), DETERMINISTIC_KEY, { iv: DETERMINISTIC_IV, mode: CryptoJS.mode.CBC });
     const dec = bytes.toString(CryptoJS.enc.Utf8);
-    return dec || ciphertext; // Fallback if decryption fails (e.g. legacy cleartext)
+    if (dec) return dec;
   } catch (e) {
-    return ciphertext;
+    // Ignore error and fall through
   }
+  
+  // If it starts with "U2Fsd" it might be non-deterministic (OpenSSL format)
+  if (String(ciphertext).startsWith("U2Fsd")) {
+    try {
+      const bytes2 = CryptoJS.AES.decrypt(String(ciphertext), RAW_KEY);
+      const dec2 = bytes2.toString(CryptoJS.enc.Utf8);
+      if (dec2) return dec2;
+    } catch (e) {
+      // Ignore error
+    }
+  }
+
+  return ciphertext; // Fallback if decryption fails (e.g. legacy cleartext)
 }

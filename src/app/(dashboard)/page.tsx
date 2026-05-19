@@ -307,12 +307,10 @@ export default function Dashboard() {
               Birimlere Göre Envanter Dağılımı
             </h3>
           </div>
-          <div className="flex-1 min-h-[300px]">
+          <div className="flex-1 min-h-[300px] w-full" style={{ minWidth: 0, minHeight: 0 }}>
             <ResponsiveContainer
               width="100%"
               height="100%"
-              minWidth={0}
-              minHeight={0}
             >
               <BarChart
                 data={chartData}

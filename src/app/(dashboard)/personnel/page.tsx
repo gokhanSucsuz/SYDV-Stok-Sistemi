@@ -7,7 +7,7 @@ import {
   updatePersonnel,
   Personnel as PersonnelType,
 } from "@/lib/db";
-import { UserCircle, Check, X, UserMinus, ShieldAlert } from "lucide-react";
+import { UserCircle, Check, X, UserMinus, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ export default function Personnel() {
   const router = useRouter();
   const [personnelList, setPersonnelList] = useState<PersonnelType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTcForms, setShowTcForms] = useState<Record<string, boolean>>({});
 
   const loadPersonnel = async () => {
     setLoading(true);
@@ -179,9 +180,24 @@ export default function Personnel() {
                           </span>
                         )}
                       </div>
+                      <div className="text-xs text-gray-500 mt-1 flex items-center">
+                        <span className="truncate">{person.title}</span>
+                        {person.tcNo && (
+                          <div className="flex items-center ml-2 border-l border-gray-200 pl-2">
+                            <span className="mr-1">
+                              {showTcForms[person.id!] ? person.tcNo : "•••••••••••"}
+                            </span>
+                            <button
+                              onClick={() => setShowTcForms(prev => ({ ...prev, [person.id!]: !prev[person.id!] }))}
+                              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                              title={showTcForms[person.id!] ? "Gizle" : "Göster"}
+                            >
+                              {showTcForms[person.id!] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        {person.title} {person.tcNo ? ` • ${person.tcNo}` : ""}
-                        <br/>
                         {person.email}
                       </p>
                     </div>
