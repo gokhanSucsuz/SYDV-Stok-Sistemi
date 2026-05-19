@@ -28,10 +28,24 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface UnitPanelProps {
-  unit: UnitType;
+  params: Promise<{ slug: string }>;
 }
 
-export default function UnitPanel({ unit }: UnitPanelProps) {
+const getUnitFromSlug = (slug: string): UnitType => {
+  switch (slug) {
+    case 'asevi': return 'Aşevi';
+    case 'dergah': return 'Dergah';
+    case 'vefa': return 'Vefa Temizlik';
+    case 'vakif': return 'Vakıf';
+    case 'bagis': return 'Bağış';
+    default: return 'Vakıf'; // fallback
+  }
+};
+
+export default function UnitPanel({ params }: UnitPanelProps) {
+  const { slug } = React.use(params);
+  const unit = getUnitFromSlug(slug);
+
   const { personnel: currentPersonnel } = useAuth();
   const [items, setItems] = useState<Item[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
