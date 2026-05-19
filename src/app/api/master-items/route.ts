@@ -5,13 +5,16 @@ import MasterItem from "@/lib/models/MasterItem";
 export async function GET() {
   try {
     await connectToDatabase();
-    const items = await MasterItem.find().lean();
+    const items = await MasterItem.find();
 
-    const formatted = items.map((item: any) => ({
-      ...item,
-      id: item._id.toString(),
-      _id: undefined,
-    }));
+    const formatted = items.map((item: any) => {
+      const obj = item.toJSON({ getters: true });
+      return {
+        ...obj,
+        id: obj._id.toString(),
+        _id: undefined,
+      };
+    });
 
     return NextResponse.json(formatted);
   } catch (error: any) {

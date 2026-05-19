@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { encryptDeterm, decryptDeterm } from "@/lib/encryption";
 
 export type UnitType = "Vefa Temizlik" | "Aşevi" | "Dergah" | "Bağış" | "Vakıf";
 
@@ -25,23 +26,26 @@ export interface IItem extends Document {
   totalReceived?: number;
 }
 
+const enc = (val: string) => (val ? encryptDeterm(val) : val);
+const dec = (val: string) => (val ? decryptDeterm(val) : val);
+
 const ItemSchema: Schema = new Schema({
-  unit: { type: String, required: true },
-  name: { type: String, required: true },
-  measurementUnit: { type: String, required: true },
+  unit: { type: String, required: true, set: enc, get: dec },
+  name: { type: String, required: true, set: enc, get: dec },
+  measurementUnit: { type: String, required: true, set: enc, get: dec },
   currentStock: { type: Number, required: true, default: 0 },
   createdAt: { type: Number, required: true, default: () => Date.now() },
-  tenderId: { type: String },
-  tenderName: { type: String },
+  tenderId: { type: String, set: enc, get: dec },
+  tenderName: { type: String, set: enc, get: dec },
   tenderEndDate: { type: Number },
   tenderLimit: { type: Number },
-  tenderType: { type: String, enum: ["İhale", "Bağış"] },
+  tenderType: { type: String, set: enc, get: dec },
   tenderHistory: [
     {
       date: { type: Number },
-      personnelId: { type: String },
-      personnelName: { type: String },
-      changes: { type: String },
+      personnelId: { type: String, set: enc, get: dec },
+      personnelName: { type: String, set: enc, get: dec },
+      changes: { type: String, set: enc, get: dec },
     },
   ],
   previousTenderStock: { type: Number },

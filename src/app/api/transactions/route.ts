@@ -3,6 +3,7 @@ import connectToDatabase from "@/lib/mongodb";
 import Transaction from "@/lib/models/Transaction";
 import Item from "@/lib/models/Item";
 import mongoose from "mongoose";
+import { encryptDeterm } from "@/lib/encryption";
 
 export async function GET(request: Request) {
   try {
@@ -12,23 +13,24 @@ export async function GET(request: Request) {
     const documentNo = searchParams.get("documentNo");
 
     if (documentNo) {
-      const exists = await Transaction.findOne({ documentNo }).lean();
-      return NextResponse.json({ exists: !!exists });
+      const docExists = await Transaction.findOne({ documentNo: encryptDeterm(documentNo) || documentNo });
+      return NextResponse.json({ exists: !!docExists });
     }
 
     let query = {};
     if (unit) {
-      query = { unit };
+      query = { unit: encryptDeterm(unit) || unit };
     }
 
-    const transactions = await Transaction.find(query)
-      .sort({ date: -1 })
-      .lean();
-    const formatted = transactions.map((tx: any) => ({
-      ...tx,
-      id: tx._id.toString(),
-      _id: undefined,
-    }));
+    const transactions = await Transaction.find(query).sort({ date: -1 });
+    const formatted = transactions.map((tx: any) => {
+      const obj = tx.toJSON({ getters: true });
+      return {
+        ...obj,
+        id: obj._id.toString(),
+        _id: undefined,
+      };
+    });
 
     return NextResponse.json(formatted);
   } catch (error: any) {
@@ -82,9 +84,11 @@ export async function POST(request: Request) {
       );
     } else {
       // FIFO logic
+      const encUnit = encryptDeterm(item.unit) || item.unit;
+      const encName = encryptDeterm(item.name) || item.name;
       const sameNameItems = await Item.find({
-        unit: item.unit,
-        name: item.name,
+        unit: encUnit,
+        name: encName,
         currentStock: { $gt: 0 },
       })
         .sort({ createdAt: 1 })

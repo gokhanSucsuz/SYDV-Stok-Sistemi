@@ -190,7 +190,8 @@ export default function Personnel() {
                     <select
                         value={person.role === "super_admin" ? "super_admin" : "personnel"}
                         onChange={(e) => handleUpdateRole(person, e.target.value as any)}
-                        className="text-xs border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-medium py-1.5 focus:ring-red-500 min-w-[120px]"
+                        disabled={person.role === "super_admin" || person.name === "Gökhan SUÇSUZ"}
+                        className="text-xs border-gray-200 rounded-lg bg-gray-50 text-gray-700 font-medium py-1.5 focus:ring-red-500 min-w-[120px] disabled:opacity-50"
                     >
                         <option value="personnel">Normal Personel</option>
                         <option value="super_admin">Süper Admin</option>
@@ -199,8 +200,9 @@ export default function Personnel() {
                     <select
                         value={person.status || "approved"}
                         onChange={(e) => handleUpdateStatus(person, e.target.value as any)}
+                        disabled={person.role === "super_admin" || person.name === "Gökhan SUÇSUZ"}
                         className={cn(
-                            "text-xs rounded-lg font-medium py-1.5 focus:ring-red-500 min-w-[120px]",
+                            "text-xs rounded-lg font-medium py-1.5 focus:ring-red-500 min-w-[120px] disabled:opacity-50",
                             person.status === "approved" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-gray-50 text-gray-700"
                         )}
                     >
@@ -210,7 +212,8 @@ export default function Personnel() {
 
                     <button
                       onClick={() => person.id && handleDelete(person.id)}
-                      className="inline-flex items-center p-1.5 border border-transparent rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none shrink-0"
+                      disabled={person.role === "super_admin" || person.name === "Gökhan SUÇSUZ"}
+                      className="inline-flex items-center p-1.5 border border-transparent rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none shrink-0 disabled:opacity-50 disabled:hover:text-gray-400 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed"
                       title="Sil"
                     >
                       <UserMinus className="h-5 w-5" />

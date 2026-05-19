@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { encryptDeterm, decryptDeterm } from "@/lib/encryption";
 
 export interface IBackup extends Document {
   fileName: string;
@@ -6,10 +7,24 @@ export interface IBackup extends Document {
   data: any;
 }
 
+const enc = (val: string) => (val ? encryptDeterm(val) : val);
+const dec = (val: string) => (val ? decryptDeterm(val) : val);
+
 const BackupSchema: Schema = new Schema({
-  fileName: { type: String, required: true },
+  fileName: { type: String, required: true, set: enc, get: dec },
   createdAt: { type: Number, required: true, default: () => Date.now() },
-  data: { type: Schema.Types.Mixed, required: true },
+  data: { 
+    type: Schema.Types.Mixed,
+    required: true, 
+    set: (val: any) => (val ? encryptDeterm(JSON.stringify(val)) : val),
+    get: (val: any) => {
+        if (!val || typeof val !== "string") return val;
+        try {
+            const dec = decryptDeterm(val);
+            return dec ? JSON.parse(dec) : val;
+        } catch { return val; }
+    }
+  },
 });
 
 export default mongoose.models.Backup ||

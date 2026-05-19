@@ -1,21 +1,19 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Personnel from "@/lib/models/Personnel";
-import { encryptData, decryptData } from "@/lib/encryption";
 
 export async function GET() {
   try {
     await connectToDatabase();
-    const personnel = await Personnel.find().lean();
+    const personnelList = await Personnel.find();
 
-    const formatted = personnel.map((p: any) => {
+    const formatted = personnelList.map((pDoc: any) => {
+      const p = pDoc.toJSON({ getters: true });
       const isGokhan = p.name === "Gökhan SUÇSUZ";
       return {
         ...p,
         id: p._id.toString(),
         _id: undefined,
-        tcNo: p.tcNo ? decryptData(p.tcNo) : undefined,
-        password: p.password ? decryptData(p.password) : undefined,
         role: isGokhan ? "super_admin" : (p.role || "personnel"),
         status: isGokhan ? "approved" : (p.status || "pending"),
       };
@@ -31,9 +29,6 @@ export async function POST(request: Request) {
   try {
     await connectToDatabase();
     const data = await request.json();
-
-    if (data.tcNo) data.tcNo = encryptData(data.tcNo);
-    if (data.password) data.password = encryptData(data.password);
 
     const newPersonnel = await Personnel.create(data);
     return NextResponse.json(
@@ -55,10 +50,28 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "ID required" }, { status: 400 });
 
     const data = await request.json();
-    if (data.tcNo) data.tcNo = encryptData(data.tcNo);
-    if (data.password) data.password = encryptData(data.password);
+    
+    // Prevent overriding super_admin fields logic
+    const existingObj = await Personnel.findById(id);
+    if (!existingObj) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    await Personnel.findByIdAndUpdate(id, data);
+    const existing = existingObj.toJSON({ getters: true });
+
+    if (existing.role === "super_admin" || existing.name === "Gökhan SUÇSUZ") {
+      if (data.status === "rejected" || data.status === "pending") {
+         return NextResponse.json({ error: "Süper admin hesabı pasif yapılamaz." }, { status: 403 });
+      }
+      if (data.role === "personnel") {
+         return NextResponse.json({ error: "Süper admin yetkisi alınamaz." }, { status: 403 });
+      }
+    }
+
+    // Assign mapped keys to existing
+    Object.keys(data).forEach((key) => {
+      existingObj.set(key, data[key]);
+    });
+    await existingObj.save();
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -72,6 +85,15 @@ export async function DELETE(request: Request) {
     const id = searchParams.get("id");
     if (!id)
       return NextResponse.json({ error: "ID required" }, { status: 400 });
+
+    const existingObj = await Personnel.findById(id);
+    if (!existingObj) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const existing = existingObj.toJSON({ getters: true });
+
+    if (existing.role === "super_admin" || existing.name === "Gökhan SUÇSUZ") {
+       return NextResponse.json({ error: "Süper admin yetkili hesap silinemez." }, { status: 403 });
+    }
 
     await Personnel.findByIdAndDelete(id);
     return NextResponse.json({ success: true });

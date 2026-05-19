@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { encryptDeterm, decryptDeterm } from "@/lib/encryption";
 
 export interface IPersonnel extends Document {
   name: string;
@@ -11,21 +12,24 @@ export interface IPersonnel extends Document {
   createdAt: number;
 }
 
+const enc = (val: string) => (val ? encryptDeterm(val) : val);
+const dec = (val: string) => (val ? decryptDeterm(val) : val);
+
 const PersonnelSchema: Schema = new Schema({
-  name: { type: String, required: true },
-  title: { type: String, required: true },
-  tcNo: { type: String },
-  password: { type: String },
-  email: { type: String, required: true },
+  name: { type: String, required: true, set: enc, get: dec },
+  title: { type: String, required: true, set: enc, get: dec },
+  tcNo: { type: String, set: enc, get: dec },
+  password: { type: String, set: enc, get: dec },
+  email: { type: String, required: true, set: enc, get: dec },
   role: {
     type: String,
-    enum: ["super_admin", "personnel"],
     default: "personnel",
+    set: enc, get: dec
   },
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected"],
     default: "pending",
+    set: enc, get: dec
   },
   createdAt: { type: Number, required: true, default: () => Date.now() },
 });

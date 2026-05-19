@@ -14,11 +14,11 @@ export async function GET(request: Request) {
     const type = searchParams.get("type");
 
     if (type === "alldata") {
-      const personnel = await Personnel.find().lean();
-      const inventory = await Item.find().lean(); // Items
-      const transactions = await Transaction.find().lean();
-      const masterItems = await MasterItem.find().lean();
-      const backups = await Backup.find().lean();
+      const personnel = (await Personnel.find()).map(x => x.toJSON({ getters: true }));
+      const inventory = (await Item.find()).map(x => x.toJSON({ getters: true }));
+      const transactions = (await Transaction.find()).map(x => x.toJSON({ getters: true }));
+      const masterItems = (await MasterItem.find()).map(x => x.toJSON({ getters: true }));
+      const backups = (await Backup.find()).map(x => x.toJSON({ getters: true }));
 
       return NextResponse.json({
         personnel,
@@ -29,13 +29,16 @@ export async function GET(request: Request) {
       });
     }
 
-    const backups = await Backup.find().sort({ createdAt: -1 }).lean();
+    const backupsMap = await Backup.find().sort({ createdAt: -1 });
 
-    const formatted = backups.map((b: any) => ({
-      ...b,
-      id: b._id.toString(),
-      _id: undefined,
-    }));
+    const formatted = backupsMap.map((b: any) => {
+      const obj = b.toJSON({ getters: true });
+      return {
+        ...obj,
+        id: obj._id.toString(),
+        _id: undefined,
+      };
+    });
 
     return NextResponse.json(formatted);
   } catch (error: any) {

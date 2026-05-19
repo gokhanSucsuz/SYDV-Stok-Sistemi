@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Item from "@/lib/models/Item";
+import { encryptDeterm } from "@/lib/encryption";
 
 export async function GET(request: Request) {
   try {
@@ -10,27 +11,31 @@ export async function GET(request: Request) {
     const id = searchParams.get("id");
 
     if (id) {
-      const item = await Item.findById(id).lean();
+      const item = await Item.findById(id);
       if (!item)
         return NextResponse.json({ error: "Not found" }, { status: 404 });
+      const obj = item.toJSON({ getters: true });
       return NextResponse.json({
-        ...item,
-        id: (item as any)._id.toString(),
+        ...obj,
+        id: (obj as any)._id.toString(),
         _id: undefined,
       });
     }
 
     let query = {};
     if (unit) {
-      query = { unit };
+      query = { unit: encryptDeterm(unit) || unit };
     }
 
-    const items = await Item.find(query).lean();
-    const formatted = items.map((item: any) => ({
-      ...item,
-      id: item._id.toString(),
-      _id: undefined,
-    }));
+    const items = await Item.find(query);
+    const formatted = items.map((item: any) => {
+      const obj = item.toJSON({ getters: true });
+      return {
+        ...obj,
+        id: obj._id.toString(),
+        _id: undefined,
+      };
+    });
 
     return NextResponse.json(formatted);
   } catch (error: any) {
@@ -44,7 +49,7 @@ export async function POST(request: Request) {
     const data = await request.json();
     const newItem = await Item.create(data);
     return NextResponse.json(
-      { id: newItem._id.toString(), ...newItem.toObject() },
+      { id: newItem._id.toString(), ...newItem.toJSON({ getters: true }) },
       { status: 201 },
     );
   } catch (error: any) {
@@ -61,7 +66,11 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "ID required" }, { status: 400 });
 
     const data = await request.json();
-    await Item.findByIdAndUpdate(id, data);
+    const item = await Item.findById(id);
+    if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    Object.keys(data).forEach(key => item.set(key, data[key]));
+    await item.save();
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
