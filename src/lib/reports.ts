@@ -638,3 +638,124 @@ export const generateTenderReport = (
   printWindow.document.write(html);
   printWindow.document.close();
 };
+
+export const generateInventoryCountReport = (
+  unit: string,
+  groupedItems: {
+    name: string;
+    totalStock: number;
+    measurementUnit: string;
+  }[],
+  currentUser?: Personnel | null,
+) => {
+  const now = new Date();
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+      <meta charset="UTF-8">
+      <title>${unit} Sayım Raporu</title>
+      <style>
+        body { font-family: 'Times New Roman', Times, serif; margin: 30px; color: #000; line-height: 1.4; }
+        .header { text-align: center; margin-bottom: 20px; position: relative; }
+        .logo { position: absolute; left: 0; top: 0; width: 50px; height: 50px; border-radius: 50%; }
+        .header h1 { font-size: 14px; margin: 2px 0; font-weight: bold; }
+        .header h2 { font-size: 12px; margin: 2px 0; font-weight: normal; }
+        .date-right { text-align: right; margin-bottom: 15px; font-size: 10px; }
+        .title { text-align: center; font-weight: bold; text-decoration: underline; margin-bottom: 15px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
+        th, td { border: 1px solid #000; padding: 6px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
+        .footer { margin-top: 40px; display: flex; justify-content: space-between; }
+        .signature { text-align: center; width: 180px; font-size: 11px; }
+        .signature p { margin: 3px 0; }
+        .report-footer { margin-top: 40px; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 10px; color: #666; text-align: right; }
+        @media print {
+          body { margin: 15px; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <img src="${APP_LOGO_URL}" class="logo" />
+        <h1>T.C.</h1>
+        <h1>EDİRNE VALİLİĞİ</h1>
+        <h2>Sosyal Yardımlaşma ve Dayanışma Vakfı Başkanlığı</h2>
+      </div>
+      
+      <div class="date-right">
+        Rapor Tarihi: ${format(now, "dd.MM.yyyy HH:mm")}
+      </div>
+
+      <div class="title">${unit.toUpperCase()} DEPO SAYIM RAPORU</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 5%;">Sıra</th>
+            <th style="width: 40%;">Malzeme Adı</th>
+            <th style="width: 20%;">Sistemdeki Stok</th>
+            <th style="width: 20%;">Sayım Sonucu</th>
+            <th style="width: 15%;">Fark (Varsa)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${groupedItems
+            .map((item, index) => {
+              return `
+              <tr>
+                <td style="text-align: center;">${index + 1}</td>
+                <td>${item.name}</td>
+                <td style="text-align: center;">${item.totalStock} ${item.measurementUnit}</td>
+                <td></td>
+                <td></td>
+              </tr>
+            `;
+            })
+            .join("")}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <div class="signature">
+          <p>Sayan Personel</p>
+          <br/><br/>
+          <p><strong>${currentUser?.name || "................................"}</strong></p>
+          <p>${currentUser?.title || "Vakıf Personeli"}</p>
+        </div>
+        <div class="signature">
+          <p>Sayan Personel (Kontrol)</p>
+          <br/><br/>
+          <p>................................</p>
+          <p>Vakıf Personeli</p>
+        </div>
+        <div class="signature">
+          <p>Onaylayan</p>
+          <br/><br/>
+          <p>................................</p>
+          <p>Vakıf Müdürü</p>
+        </div>
+      </div>
+
+      <div class="report-footer">
+        Raporu Hazırlayan: ${currentUser ? `${currentUser.name} (${currentUser.title})` : "Sistem"} | Yazdırılma: ${format(now, "dd.MM.yyyy HH:mm")}
+      </div>
+
+      <script>
+        window.onload = function() { 
+          setTimeout(() => {
+            window.print(); 
+          }, 500);
+        }
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+};

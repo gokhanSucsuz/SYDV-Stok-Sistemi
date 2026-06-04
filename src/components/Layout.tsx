@@ -39,7 +39,7 @@ const navigation = [
       { name: "Vakıf", href: "/unit/vakif", icon: Building2 },
     ],
   },
-  { name: "Raporlar", href: "/statistics", icon: BarChart3, adminOnly: true },
+  { name: "Raporlar", href: "/statistics", icon: BarChart3 },
   { name: "Sistem Yedekleri", href: "/backup", icon: Database, adminOnly: true },
   { name: "Yardım Merkezi", href: "/guide", icon: BookOpen },
 ];

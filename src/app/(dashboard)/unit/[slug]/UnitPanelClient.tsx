@@ -41,6 +41,7 @@ import {
   generateItemReport,
   generateMonthlyInventoryReport,
   generateTenderReport,
+  generateInventoryCountReport,
 } from "@/lib/reports";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -1165,7 +1166,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                 <PackageOpen className="w-5 h-5 text-gray-400" /> Hızlı İşlemler
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <button
                   type="button"
                   onClick={() => setShowTenderModal(true)}
@@ -1191,6 +1192,15 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                 >
                   <ArrowUpRight className="w-6 h-6 mb-1" />
                   Toplu Stok Çıkışı
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => generateInventoryCountReport(unit, groupedList, currentPersonnel)}
+                  className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-blue-300 rounded-xl text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-all shadow-sm"
+                >
+                  <FileText className="w-6 h-6 mb-1" />
+                  Sayım Raporu Al
                 </button>
               </div>
 
