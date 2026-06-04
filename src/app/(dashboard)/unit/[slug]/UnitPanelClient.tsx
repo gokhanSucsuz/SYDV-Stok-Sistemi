@@ -1116,24 +1116,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         </div>
       )}
 
-      {personnel.length === 0 && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertCircle
-                className="h-5 w-5 text-red-400"
-                aria-hidden="true"
-              />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">
-                İşlem yapabilmek için sistemde kayıtlı personel bulunmalıdır.
-                Lütfen Personel Yönetimi sayfasından personel ekleyin.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="flex space-x-2 border-b border-gray-100 mb-6 px-2 overflow-x-auto hidden-scrollbar">
         <button
