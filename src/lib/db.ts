@@ -166,6 +166,14 @@ export async function addTransaction(
   return data.id;
 }
 
+export async function deleteTransaction(id: string): Promise<void> {
+  const res = await fetch(`/api/transactions?id=${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "İşlem geri alınamadı");
+  }
+}
+
 export async function getMasterItems(): Promise<MasterItem[]> {
   const res = await fetch("/api/master-items");
   if (!res.ok) throw new Error("Malzemeler alınamadı");
