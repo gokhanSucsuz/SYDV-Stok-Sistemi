@@ -2850,7 +2850,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
             </form>
           </div>
         </div>
-        </div>
       )}
 
       {/* Confirmation Modal */}
