@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { APP_LOGO_URL, APP_NAME, APP_SUBTITLE } from "@/lib/constants";
 import { useAuth } from "@/contexts/AuthContext";
+import AutoBackupChecker from "./AutoBackupChecker";
 
 const navigation = [
   { name: "Genel Bakış", href: "/", icon: LayoutDashboard },
@@ -262,6 +263,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 md:px-8">
             {children}
           </div>
+          <AutoBackupChecker />
         </main>
       </div>
     </div>

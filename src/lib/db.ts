@@ -35,6 +35,7 @@ export interface Item {
   tenderHistory?: TenderHistory[];
   previousTenderStock?: number;
   totalReceived?: number;
+  isLocked?: boolean;
 }
 
 export interface Transaction {

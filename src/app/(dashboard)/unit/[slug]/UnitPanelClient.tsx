@@ -163,6 +163,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
   );
   const [editTenderConfirm, setEditTenderConfirm] = useState(false);
   const [allowTenderHeaderEdit, setAllowTenderHeaderEdit] = useState(false);
+  const [editTenderIsLocked, setEditTenderIsLocked] = useState(false);
 
   const isTenderExpired = (item: Item) => {
     if (!item.tenderEndDate) return false;
@@ -637,27 +638,30 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         alert("Tüm satırlar için malzeme ve miktar girilmelidir.");
         return;
       }
-      const masterItem = items.find((i) => i.id === item.itemId);
-      if (masterItem) {
-        const totalStock = groupedItems[masterItem.name]?.totalStock || 0;
+      const itemName = item.itemId; // We store the master item name in itemId
+      const group = groupedItems[itemName];
+      if (group) {
+        const totalStock = group.totalStock;
         if (totalStock < Number(item.quantity)) {
           alert(
-            `${masterItem.name} için yetersiz toplam stok. Mevcut: ${totalStock} ${masterItem.measurementUnit}`,
+            `${itemName} için yetersiz toplam stok. Mevcut: ${totalStock} ${group.measurementUnit}`,
           );
           return;
         }
+      } else {
+         alert(`${itemName} stoklarda bulunamadı.`);
+         return;
       }
     }
 
     try {
       for (const item of bulkExitItems) {
         const quantityToExit = Number(item.quantity);
-        const masterItem = items.find((i) => i.id === item.itemId);
-        if (!masterItem) continue;
+        const itemName = item.itemId;
 
         // FIFO Logic: Find all items with same name in this unit, sort by createdAt
         const sameItems = items
-          .filter((i) => i.name === masterItem.name && i.currentStock > 0)
+          .filter((i) => i.name === itemName && i.currentStock > 0)
           .sort((a, b) => a.createdAt - b.createdAt);
 
         let remainingToExit = quantityToExit;
@@ -684,7 +688,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
 
         if (remainingToExit > 0) {
           console.error(
-            `Warning: Could not exit full quantity for ${masterItem.name}. Remaining: ${remainingToExit}`,
+            `Warning: Could not exit full quantity for ${itemName}. Remaining: ${remainingToExit}`,
           );
         }
       }
@@ -715,6 +719,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
     setEditTenderPersonnelId(currentPersonnel?.id || "");
     setEditTenderConfirm(false);
     setAllowTenderHeaderEdit(false);
+    setEditTenderIsLocked(firstItem?.isLocked || false);
     setShowEditTenderModal(true);
   };
 
@@ -763,6 +768,9 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         if (oldDate !== editTenderEndDateVal)
           changes.push(`Tarih: ${oldDate} -> ${editTenderEndDateVal}`);
 
+        if (originalItem.isLocked !== editTenderIsLocked)
+          changes.push(`Durum: ${originalItem.isLocked ? "Kilitli" : "Açık"} -> ${editTenderIsLocked ? "Kilitli" : "Açık"}`);
+
         const newHistory = [...(originalItem.tenderHistory || [])];
         if (changes.length > 0) {
           newHistory.push({
@@ -781,6 +789,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
             : undefined,
           tenderLimit: Number(item.tenderLimit),
           tenderHistory: newHistory,
+          isLocked: editTenderIsLocked,
         });
       }
 
@@ -1178,7 +1187,14 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
 
                 <button
                   type="button"
-                  onClick={() => setShowBulkEntryModal(true)}
+                  onClick={() => {
+                    const validEntryItems = items.filter(i => !i.isLocked && !isTenderExpired(i));
+                    if (validEntryItems.length === 0) {
+                      alert("Stok girişi yapılabilecek aktif (süresi geçmemiş ve kilitlenmemiş) bir ihale bulunamadı.");
+                      return;
+                    }
+                    setShowBulkEntryModal(true);
+                  }}
                   className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-green-300 rounded-xl text-sm font-semibold text-green-700 bg-green-50 hover:bg-green-100 transition-all shadow-sm"
                 >
                   <ArrowDownRight className="w-6 h-6 mb-1" />
@@ -1187,7 +1203,14 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
 
                 <button
                   type="button"
-                  onClick={() => setShowBulkExitModal(true)}
+                  onClick={() => {
+                    const validExitItems = items.filter(i => i.currentStock > 0);
+                    if (validExitItems.length === 0) {
+                      alert("Çıkış yapılabilecek herhangi bir stok bulunmuyor.");
+                      return;
+                    }
+                    setShowBulkExitModal(true);
+                  }}
                   className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-gray-300 rounded-xl text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 transition-all shadow-sm"
                 >
                   <ArrowUpRight className="w-6 h-6 mb-1" />
@@ -2316,7 +2339,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
                       >
                         <option value="">Seçiniz...</option>
-                        {items.map((i) => (
+                        {items.filter(i => !i.isLocked && !isTenderExpired(i)).map((i) => (
                           <option key={i.id} value={i.id}>
                             {i.name} {i.tenderName ? `(${i.tenderName})` : ""}-
                             Alınan: {i.totalReceived || 0} / Limit:{" "}
@@ -2484,26 +2507,13 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
                       >
                         <option value="">Seçiniz...</option>
-                        {items
-                          .filter((i) => i.currentStock > 0)
-                          .sort((a, b) => a.createdAt - b.createdAt) // Sort by date for FIFO
-                          .map((i, idx, arr) => {
-                            const isOldest = !arr
-                              .slice(0, idx)
-                              .some((prev) => prev.name === i.name);
-                            return (
-                              <option
-                                key={i.id}
-                                value={i.id}
-                                className={isOldest ? "font-bold" : ""}
-                              >
-                                {i.name}{" "}
-                                {i.tenderName ? `(${i.tenderName})` : ""}
-                                {isOldest ? " [İLK ÇIKILACAK]" : ""}- Mevcut:{" "}
-                                {i.currentStock} {i.measurementUnit}
-                              </option>
-                            );
-                          })}
+                        {groupedList
+                          .filter((g) => g.totalStock > 0)
+                          .map((g) => (
+                            <option key={g.name} value={g.name}>
+                              {g.name} - Mevcut: {g.totalStock} {g.measurementUnit}
+                            </option>
+                          ))}
                       </select>
                     </div>
                     <div className="w-32">
@@ -2534,18 +2544,13 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                         className={`block w-full rounded-md sm:text-sm p-2 border font-bold ${
                           item.itemId &&
                           item.quantity &&
-                          itemMap[Number(item.itemId)]?.currentStock -
-                            Number(item.quantity) <
-                            0
+                          (groupedItems[item.itemId]?.totalStock || 0) - Number(item.quantity) < 0
                             ? "bg-red-50 border-red-300 text-red-600"
                             : "bg-green-50 border-green-300 text-green-600"
                         }`}
                       >
                         {item.itemId && item.quantity
-                          ? (
-                              itemMap[Number(item.itemId)]?.currentStock -
-                              Number(item.quantity)
-                            ).toFixed(2)
+                          ? ((groupedItems[item.itemId]?.totalStock || 0) - Number(item.quantity)).toFixed(2)
                           : "-"}
                       </div>
                     </div>
@@ -2642,6 +2647,23 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                       onChange={(e) => setEditingTenderName(e.target.value)}
                       className={`mt-1 block w-full rounded-md shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border ${!allowTenderHeaderEdit ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white"}`}
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      İhale Kilidi
+                    </label>
+                    <div className="mt-2 flex items-center">
+                      <input
+                        type="checkbox"
+                        id="lockTender"
+                        checked={editTenderIsLocked}
+                        onChange={(e) => setEditTenderIsLocked(e.target.checked)}
+                        className="h-5 w-5 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="lockTender" className="ml-2 block text-sm text-gray-900 font-medium">
+                        İhaleyi Kilitle (Yeni Stok Girişi Yapılamaz)
+                      </label>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
