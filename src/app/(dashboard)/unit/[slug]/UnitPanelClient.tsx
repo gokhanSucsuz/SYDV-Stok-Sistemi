@@ -17,7 +17,6 @@ import {
   MasterItem,
   checkDocumentNoExists,
   generateUniqueDocNo,
-  deleteTransaction,
 } from "@/lib/db";
 import {
   Plus,
@@ -42,7 +41,6 @@ import {
   generateItemReport,
   generateMonthlyInventoryReport,
   generateTenderReport,
-  generateInventoryCountReport,
 } from "@/lib/reports";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -154,19 +152,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
   );
   const [bulkExitDescription, setBulkExitDescription] = useState("");
 
-  // Confirmation Modal
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    type: "GİRİŞ" | "ÇIKIŞ" | null;
-    items: { name: string; quantity: number; unit?: string }[];
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    type: null,
-    items: [],
-    onConfirm: () => {},
-  });
-
   // Edit Tender Modal
   const [showEditTenderModal, setShowEditTenderModal] = useState(false);
   const [editingTenderName, setEditingTenderName] = useState("");
@@ -177,7 +162,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
   );
   const [editTenderConfirm, setEditTenderConfirm] = useState(false);
   const [allowTenderHeaderEdit, setAllowTenderHeaderEdit] = useState(false);
-  const [editTenderIsLocked, setEditTenderIsLocked] = useState(false);
 
   const isTenderExpired = (item: Item) => {
     if (!item.tenderEndDate) return false;
@@ -486,21 +470,8 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
     }
 
     setEditingItem(null);
-    setEditingItem(null);
     setEditDocumentNo(generateUniqueDocNo());
     loadData();
-  };
-
-  const handleUndoTransaction = async (tx: Transaction) => {
-    if (!window.confirm("Bu işlemi geri almak istediğinize emin misiniz? Yapılan stok değişiklikleri iptal edilecektir.")) return;
-    try {
-      await deleteTransaction(tx.id!);
-      await loadData();
-      setError("");
-      alert("İşlem başarıyla geri alındı!");
-    } catch (err: any) {
-      setError(err.message || "İşlem geri alınırken bir hata oluştu");
-    }
   };
 
   const handleAddBulkItemRow = () => {
@@ -578,66 +549,51 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
       }
     }
 
-    setConfirmModal({
-      isOpen: true,
-      type: "GİRİŞ",
-      items: bulkEntryItems.map((item) => {
-        const selected = items.find((i) => i.id === item.itemId);
-        return {
-          name: selected?.name || "",
+    try {
+      const addedItemsForPrint = [];
+      for (const item of bulkEntryItems) {
+        const selectedItem = items.find((i) => i.id === item.itemId);
+        if (!selectedItem) continue;
+
+        await addTransaction({
+          itemId: selectedItem.id!,
+          unit: unit,
+          type: "GİRİŞ",
           quantity: Number(item.quantity),
-          unit: selected?.measurementUnit,
-        };
-      }),
-      onConfirm: async () => {
-        setConfirmModal({ ...confirmModal, isOpen: false });
-        try {
-          const addedItemsForPrint = [];
-          for (const item of bulkEntryItems) {
-            const selectedItem = items.find((i) => i.id === item.itemId);
-            if (!selectedItem) continue;
+          date: Date.now(),
+          personnelId: bulkEntryPersonnelId,
+          description: bulkEntryDescription || "Toplu Stok Girişi",
+          documentNo: bulkEntryDocumentNo,
+        });
 
-            await addTransaction({
-              itemId: selectedItem.id!,
-              unit: unit,
-              type: "GİRİŞ",
-              quantity: Number(item.quantity),
-              date: Date.now(),
-              personnelId: bulkEntryPersonnelId,
-              description: bulkEntryDescription || "Toplu Stok Girişi",
-              documentNo: bulkEntryDocumentNo,
-            });
+        addedItemsForPrint.push({
+          itemName: selectedItem.name,
+          tenderName: selectedItem.tenderName,
+          quantity: item.quantity,
+          measurementUnit: selectedItem.measurementUnit,
+        });
+      }
 
-            addedItemsForPrint.push({
-              itemName: selectedItem.name,
-              tenderName: selectedItem.tenderName,
-              quantity: item.quantity,
-              measurementUnit: selectedItem.measurementUnit,
-            });
-          }
+      printBulkMuayeneKabul({
+        items: addedItemsForPrint,
+        tenderName: "Toplu Stok Girişi",
+        documentNo: bulkEntryDocumentNo,
+        personnelName:
+          personnel.find((p) => p.id === bulkEntryPersonnelId)?.name || "",
+        date: Date.now(),
+      });
 
-          printBulkMuayeneKabul({
-            items: addedItemsForPrint,
-            tenderName: "Toplu Stok Girişi",
-            documentNo: bulkEntryDocumentNo,
-            personnelName:
-              personnel.find((p) => p.id === bulkEntryPersonnelId)?.name || "",
-            date: Date.now(),
-          });
-
-          setShowBulkEntryModal(false);
-          setBulkEntryItems([{ itemId: "", quantity: "" }]);
-          setBulkEntryPersonnelId(currentPersonnel?.id || "");
-          setBulkEntryDocumentNo(generateUniqueDocNo());
-          setBulkEntryDescription("");
-          loadData();
-          alert("Toplu stok girişi başarıyla tamamlandı.");
-        } catch (err) {
-          console.error(err);
-          alert(err instanceof Error ? err.message : "Bir hata oluştu.");
-        }
-      },
-    });
+      setShowBulkEntryModal(false);
+      setBulkEntryItems([{ itemId: "", quantity: "" }]);
+      setBulkEntryPersonnelId(currentPersonnel?.id || "");
+      setBulkEntryDocumentNo(generateUniqueDocNo());
+      setBulkEntryDescription("");
+      loadData();
+      alert("Toplu stok girişi başarıyla tamamlandı.");
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Bir hata oluştu.");
+    }
   };
 
   const handleAddBulkExitRow = () => {
@@ -680,87 +636,69 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         alert("Tüm satırlar için malzeme ve miktar girilmelidir.");
         return;
       }
-      const itemName = item.itemId; // We store the master item name in itemId
-      const group = groupedItems[itemName];
-      if (group) {
-        const totalStock = group.totalStock;
+      const masterItem = items.find((i) => i.id === item.itemId);
+      if (masterItem) {
+        const totalStock = groupedItems[masterItem.name]?.totalStock || 0;
         if (totalStock < Number(item.quantity)) {
           alert(
-            `${itemName} için yetersiz toplam stok. Mevcut: ${totalStock} ${group.measurementUnit}`,
+            `${masterItem.name} için yetersiz toplam stok. Mevcut: ${totalStock} ${masterItem.measurementUnit}`,
           );
           return;
         }
-      } else {
-         alert(`${itemName} stoklarda bulunamadı.`);
-         return;
       }
     }
 
-    setConfirmModal({
-      isOpen: true,
-      type: "ÇIKIŞ",
-      items: bulkExitItems.map((item) => {
-        const group = groupedItems[item.itemId];
-        return {
-          name: item.itemId,
-          quantity: Number(item.quantity),
-          unit: group?.measurementUnit,
-        };
-      }),
-      onConfirm: async () => {
-        setConfirmModal({ ...confirmModal, isOpen: false });
-        try {
-          for (const item of bulkExitItems) {
-            const quantityToExit = Number(item.quantity);
-            const itemName = item.itemId;
+    try {
+      for (const item of bulkExitItems) {
+        const quantityToExit = Number(item.quantity);
+        const masterItem = items.find((i) => i.id === item.itemId);
+        if (!masterItem) continue;
 
-            // FIFO Logic: Find all items with same name in this unit, sort by createdAt
-            const sameItems = items
-              .filter((i) => i.name === itemName && i.currentStock > 0)
-              .sort((a, b) => a.createdAt - b.createdAt);
+        // FIFO Logic: Find all items with same name in this unit, sort by createdAt
+        const sameItems = items
+          .filter((i) => i.name === masterItem.name && i.currentStock > 0)
+          .sort((a, b) => a.createdAt - b.createdAt);
 
-            let remainingToExit = quantityToExit;
-            for (const stockItem of sameItems) {
-              if (remainingToExit <= 0) break;
-              const takeFromThis = Math.min(
-                stockItem.currentStock,
-                remainingToExit,
-              );
+        let remainingToExit = quantityToExit;
+        for (const stockItem of sameItems) {
+          if (remainingToExit <= 0) break;
+          const takeFromThis = Math.min(
+            stockItem.currentStock,
+            remainingToExit,
+          );
 
-              await addTransaction({
-                itemId: stockItem.id!,
-                unit: unit,
-                type: "ÇIKIŞ",
-                quantity: takeFromThis,
-                date: Date.now(),
-                personnelId: bulkExitPersonnelId,
-                description: bulkExitDescription || "Toplu Stok Çıkışı (FIFO)",
-                documentNo: bulkExitDocumentNo,
-              });
+          await addTransaction({
+            itemId: stockItem.id!,
+            unit: unit,
+            type: "ÇIKIŞ",
+            quantity: takeFromThis,
+            date: Date.now(),
+            personnelId: bulkExitPersonnelId,
+            description: bulkExitDescription || "Toplu Stok Çıkışı (FIFO)",
+            documentNo: bulkExitDocumentNo,
+          });
 
-              remainingToExit -= takeFromThis;
-            }
-
-            if (remainingToExit > 0) {
-              console.error(
-                `Warning: Could not exit full quantity for ${itemName}. Remaining: ${remainingToExit}`,
-              );
-            }
-          }
-
-          setShowBulkExitModal(false);
-          setBulkExitItems([{ itemId: "", quantity: "" }]);
-          setBulkExitPersonnelId(currentPersonnel?.id || "");
-          setBulkExitDocumentNo(generateUniqueDocNo());
-          setBulkExitDescription("");
-          loadData();
-          alert("Toplu stok çıkışı başarıyla tamamlandı.");
-        } catch (err) {
-          console.error(err);
-          alert(err instanceof Error ? err.message : "Bir hata oluştu.");
+          remainingToExit -= takeFromThis;
         }
-      },
-    });
+
+        if (remainingToExit > 0) {
+          console.error(
+            `Warning: Could not exit full quantity for ${masterItem.name}. Remaining: ${remainingToExit}`,
+          );
+        }
+      }
+
+      setShowBulkExitModal(false);
+      setBulkExitItems([{ itemId: "", quantity: "" }]);
+      setBulkExitPersonnelId(currentPersonnel?.id || "");
+      setBulkExitDocumentNo(generateUniqueDocNo());
+      setBulkExitDescription("");
+      loadData();
+      alert("Toplu stok çıkışı başarıyla tamamlandı.");
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Bir hata oluştu.");
+    }
   };
 
   const handleOpenEditTender = (tName: string) => {
@@ -776,7 +714,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
     setEditTenderPersonnelId(currentPersonnel?.id || "");
     setEditTenderConfirm(false);
     setAllowTenderHeaderEdit(false);
-    setEditTenderIsLocked(firstItem?.isLocked || false);
     setShowEditTenderModal(true);
   };
 
@@ -825,9 +762,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         if (oldDate !== editTenderEndDateVal)
           changes.push(`Tarih: ${oldDate} -> ${editTenderEndDateVal}`);
 
-        if (originalItem.isLocked !== editTenderIsLocked)
-          changes.push(`Durum: ${originalItem.isLocked ? "Kilitli" : "Açık"} -> ${editTenderIsLocked ? "Kilitli" : "Açık"}`);
-
         const newHistory = [...(originalItem.tenderHistory || [])];
         if (changes.length > 0) {
           newHistory.push({
@@ -846,7 +780,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
             : undefined,
           tenderLimit: Number(item.tenderLimit),
           tenderHistory: newHistory,
-          isLocked: editTenderIsLocked,
         });
       }
 
@@ -1145,18 +1078,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         </h1>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm flex justify-between items-center animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
-            <p className="text-sm font-medium text-red-800">{error}</p>
-          </div>
-          <button onClick={() => setError("")} className="text-red-500 hover:text-red-700">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-
       {lowStockItems.length > 0 && (
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
           <div className="flex">
@@ -1185,6 +1106,24 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
         </div>
       )}
 
+      {personnel.length === 0 && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertCircle
+                className="h-5 w-5 text-red-400"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">
+                İşlem yapabilmek için sistemde kayıtlı personel bulunmalıdır.
+                Lütfen Personel Yönetimi sayfasından personel ekleyin.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex space-x-2 border-b border-gray-100 mb-6 px-2 overflow-x-auto hidden-scrollbar">
         <button
@@ -1226,7 +1165,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                 <PackageOpen className="w-5 h-5 text-gray-400" /> Hızlı İşlemler
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <button
                   type="button"
                   onClick={() => setShowTenderModal(true)}
@@ -1238,15 +1177,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const validEntryItems = items.filter(i => !i.isLocked && !isTenderExpired(i));
-                    if (validEntryItems.length === 0) {
-                      setError("Stok girişi yapılabilecek aktif (süresi geçmemiş ve kilitlenmemiş) bir ihale bulunamadı.");
-                      setTimeout(() => setError(""), 5000);
-                      return;
-                    }
-                    setShowBulkEntryModal(true);
-                  }}
+                  onClick={() => setShowBulkEntryModal(true)}
                   className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-green-300 rounded-xl text-sm font-semibold text-green-700 bg-green-50 hover:bg-green-100 transition-all shadow-sm"
                 >
                   <ArrowDownRight className="w-6 h-6 mb-1" />
@@ -1255,28 +1186,11 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    const validExitItems = items.filter(i => i.currentStock > 0);
-                    if (validExitItems.length === 0) {
-                      setError("Çıkış yapılabilecek herhangi bir stok bulunmuyor.");
-                      setTimeout(() => setError(""), 5000);
-                      return;
-                    }
-                    setShowBulkExitModal(true);
-                  }}
+                  onClick={() => setShowBulkExitModal(true)}
                   className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-gray-300 rounded-xl text-sm font-semibold text-gray-700 bg-gray-50 hover:bg-gray-100 transition-all shadow-sm"
                 >
                   <ArrowUpRight className="w-6 h-6 mb-1" />
                   Toplu Stok Çıkışı
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => generateInventoryCountReport(unit, groupedList, currentPersonnel)}
-                  className="flex flex-col justify-center items-center p-4 border-2 border-dashed border-blue-300 rounded-xl text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-all shadow-sm"
-                >
-                  <FileText className="w-6 h-6 mb-1" />
-                  Sayım Raporu Al
                 </button>
               </div>
 
@@ -1743,15 +1657,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                               {itemMap[tx.itemId]?.name || "Bilinmeyen Malzeme"}
                             </p>
                           </div>
-                          <div className="ml-2 flex-shrink-0 flex items-center space-x-2">
-                            {Date.now() - tx.date < 600000 && (
-                              <button
-                                onClick={() => handleUndoTransaction(tx)}
-                                className="px-2 py-1 text-[10px] font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded border border-red-200 transition-colors"
-                              >
-                                İşlemi Geri Al
-                              </button>
-                            )}
+                          <div className="ml-2 flex-shrink-0 flex">
                             <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                               {format(tx.date, "dd.MM.yyyy HH:mm")}
                             </p>
@@ -2400,7 +2306,7 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
                       >
                         <option value="">Seçiniz...</option>
-                        {items.filter(i => !i.isLocked && !isTenderExpired(i)).map((i) => (
+                        {items.map((i) => (
                           <option key={i.id} value={i.id}>
                             {i.name} {i.tenderName ? `(${i.tenderName})` : ""}-
                             Alınan: {i.totalReceived || 0} / Limit:{" "}
@@ -2568,13 +2474,26 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border"
                       >
                         <option value="">Seçiniz...</option>
-                        {groupedList
-                          .filter((g) => g.totalStock > 0)
-                          .map((g) => (
-                            <option key={g.name} value={g.name}>
-                              {g.name} - Mevcut: {g.totalStock} {g.measurementUnit}
-                            </option>
-                          ))}
+                        {items
+                          .filter((i) => i.currentStock > 0)
+                          .sort((a, b) => a.createdAt - b.createdAt) // Sort by date for FIFO
+                          .map((i, idx, arr) => {
+                            const isOldest = !arr
+                              .slice(0, idx)
+                              .some((prev) => prev.name === i.name);
+                            return (
+                              <option
+                                key={i.id}
+                                value={i.id}
+                                className={isOldest ? "font-bold" : ""}
+                              >
+                                {i.name}{" "}
+                                {i.tenderName ? `(${i.tenderName})` : ""}
+                                {isOldest ? " [İLK ÇIKILACAK]" : ""}- Mevcut:{" "}
+                                {i.currentStock} {i.measurementUnit}
+                              </option>
+                            );
+                          })}
                       </select>
                     </div>
                     <div className="w-32">
@@ -2605,13 +2524,18 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                         className={`block w-full rounded-md sm:text-sm p-2 border font-bold ${
                           item.itemId &&
                           item.quantity &&
-                          (groupedItems[item.itemId]?.totalStock || 0) - Number(item.quantity) < 0
+                          itemMap[Number(item.itemId)]?.currentStock -
+                            Number(item.quantity) <
+                            0
                             ? "bg-red-50 border-red-300 text-red-600"
                             : "bg-green-50 border-green-300 text-green-600"
                         }`}
                       >
                         {item.itemId && item.quantity
-                          ? ((groupedItems[item.itemId]?.totalStock || 0) - Number(item.quantity)).toFixed(2)
+                          ? (
+                              itemMap[Number(item.itemId)]?.currentStock -
+                              Number(item.quantity)
+                            ).toFixed(2)
                           : "-"}
                       </div>
                     </div>
@@ -2708,23 +2632,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                       onChange={(e) => setEditingTenderName(e.target.value)}
                       className={`mt-1 block w-full rounded-md shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-2 border ${!allowTenderHeaderEdit ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white"}`}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      İhale Kilidi
-                    </label>
-                    <div className="mt-2 flex items-center">
-                      <input
-                        type="checkbox"
-                        id="lockTender"
-                        checked={editTenderIsLocked}
-                        onChange={(e) => setEditTenderIsLocked(e.target.checked)}
-                        className="h-5 w-5 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="lockTender" className="ml-2 block text-sm text-gray-900 font-medium">
-                        İhaleyi Kilitle (Yeni Stok Girişi Yapılamaz)
-                      </label>
-                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
@@ -2848,57 +2755,6 @@ export default function UnitPanel({ slug }: UnitPanelProps) {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Confirmation Modal */}
-      {confirmModal.isOpen && (
-        <div className="fixed inset-0 bg-gray-900/60 flex items-center justify-center z-[100] px-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mx-auto mb-4">
-              <AlertCircle className="w-6 h-6 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-              İşlemi Onaylıyor musunuz?
-            </h3>
-            <p className="text-sm text-gray-500 mb-6 text-center">
-              Aşağıdaki {confirmModal.type} işlemini sisteme kaydetmek üzeresiniz.
-            </p>
-
-            <div className="bg-gray-50 rounded-lg p-4 mb-6 max-h-48 overflow-y-auto hidden-scrollbar border border-gray-100">
-              <ul className="space-y-3">
-                {confirmModal.items.map((item, idx) => (
-                  <li key={idx} className="flex justify-between items-center text-sm border-b border-gray-200 pb-2 last:border-0 last:pb-0">
-                    <span className="font-medium text-gray-700">{item.name}</span>
-                    <span className={`font-bold ${confirmModal.type === "GİRİŞ" ? "text-green-600" : "text-red-600"}`}>
-                      {confirmModal.type === "GİRİŞ" ? "+" : "-"}{item.quantity} {item.unit || ""}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-                className="flex-1 px-4 py-2.5 border border-gray-300 shadow-sm text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-              >
-                İptal Et
-              </button>
-              <button
-                type="button"
-                onClick={confirmModal.onConfirm}
-                className={`flex-1 px-4 py-2.5 shadow-sm text-sm font-semibold rounded-xl text-white transition-colors ${
-                  confirmModal.type === "GİRİŞ" 
-                    ? "bg-green-600 hover:bg-green-700" 
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
-              >
-                Evet, Onayla
-              </button>
-            </div>
           </div>
         </div>
       )}

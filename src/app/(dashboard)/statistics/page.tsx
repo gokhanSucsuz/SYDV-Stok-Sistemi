@@ -45,6 +45,10 @@ export default function Statistics() {
   const [reportUnit, setReportUnit] = useState<UnitType | "Tümü">("Tümü");
 
   useEffect(() => {
+    if (currentPersonnel && currentPersonnel.role !== "super_admin") {
+      router.push("/");
+      return;
+    }
     const loadData = async () => {
       const [i, t, p] = await Promise.all([
         getAllItems(),

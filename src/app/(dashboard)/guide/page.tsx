@@ -17,9 +17,13 @@ import {
   CheckCircle,
   AlertCircle,
   Download,
+  Printer,
+  Sparkles,
 } from "lucide-react";
 import { APP_LOGO_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { generateProjectPresentationPDF } from "@/lib/reports";
 
 const tabs = [
   { id: "tech", label: "Sistem ve Teknoloji", icon: Code },
@@ -34,8 +38,13 @@ const tabs = [
 
 export default function Guide() {
   const [activeTab, setActiveTab] = useState("tech");
+  const { personnel } = useAuth();
 
   const ActiveIcon = tabs.find((t) => t.id === activeTab)?.icon || BookOpen;
+
+  const handlePrintPresentation = () => {
+    generateProjectPresentationPDF(personnel);
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden bg-white shadow-sm border border-gray-100 rounded-3xl">
@@ -58,8 +67,16 @@ export default function Guide() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-lg border border-green-100">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handlePrintPresentation}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold rounded-xl shadow-sm hover:shadow transition-all active:scale-95"
+            title="Kuruma ve yönetime sunum için detaylı PDF raporu indir"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Proje Sunum Raporu (PDF)</span>
+          </button>
+          <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-lg border border-green-100 hidden sm:inline-block">
             v2.0 Güncel
           </span>
         </div>
@@ -111,6 +128,32 @@ export default function Guide() {
             {/* TAB CONTENT: Tech Stack */}
             {activeTab === "tech" && (
               <div className="space-y-6 animate-in fade-in duration-300">
+                {/* Presentation PDF Callout Banner */}
+                <div className="p-6 bg-gradient-to-r from-red-900 via-red-800 to-red-950 text-white rounded-3xl shadow-lg relative overflow-hidden">
+                  <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
+                  <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div className="space-y-2 max-w-2xl">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-700/60 rounded-full text-xs font-semibold text-red-100 border border-red-500/40">
+                        <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                        <span>Resmi Kurumsal Sunum Dokümanı</span>
+                      </div>
+                      <h3 className="text-xl font-bold tracking-tight text-white">
+                        Proje Sunumu & Fizibilite Raporu (PDF)
+                      </h3>
+                      <p className="text-xs md:text-sm text-red-100/90 leading-relaxed">
+                        Valilik, Vakıf Müdürlüğü ve denetim heyetlerine sunum yapmak amacıyla hazırlanan bu resmi raporda; projenin amacı, kâğıt tabanlı takibin getirdiği riskler, kuruma sağladığı maddi/mali tasarruf ve vatandaşlarımıza sağladığı direkt sosyal faydalar detaylıca açıklanmaktadır.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handlePrintPresentation}
+                      className="flex-shrink-0 flex items-center gap-2 px-5 py-3 bg-white hover:bg-gray-100 text-red-900 font-bold text-sm rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95"
+                    >
+                      <Printer className="w-5 h-5 text-red-600" />
+                      <span>Sunum PDF'ini Yazdır / İndir</span>
+                    </button>
+                  </div>
+                </div>
+
                 <p className="text-gray-600 leading-relaxed text-lg">
                   Stok Takip Sistemi, modern web teknolojileri kullanılarak{" "}
                   <strong>Edirne SYDV</strong> için özel olarak tasarlanıp

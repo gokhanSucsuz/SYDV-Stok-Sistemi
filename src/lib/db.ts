@@ -35,7 +35,6 @@ export interface Item {
   tenderHistory?: TenderHistory[];
   previousTenderStock?: number;
   totalReceived?: number;
-  isLocked?: boolean;
 }
 
 export interface Transaction {
@@ -164,14 +163,6 @@ export async function addTransaction(
   }
   const data = await res.json();
   return data.id;
-}
-
-export async function deleteTransaction(id: string): Promise<void> {
-  const res = await fetch(`/api/transactions?id=${id}`, { method: "DELETE" });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || "İşlem geri alınamadı");
-  }
 }
 
 export async function getMasterItems(): Promise<MasterItem[]> {
